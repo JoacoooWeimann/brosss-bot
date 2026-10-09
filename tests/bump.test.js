@@ -28,7 +28,10 @@ test("reconoce el bump de DISBOARD por el comando o por el texto, no lo de otros
 const ahora = Date.parse("2026-10-09T12:30:00Z");
 
 test("antes de las 2 horas no avisa", () => {
-  assert.deepEqual(revisarBump([bump("2026-10-09T11:00:00Z")], { botId: "bot", ahora }), { recordar: false, borrar: [] });
+  const r = revisarBump([bump("2026-10-09T11:00:00Z")], { botId: "bot", ahora });
+  assert.equal(r.recordar, false);
+  assert.deepEqual(r.borrar, []);
+  assert.equal(r.ultimoBump, Date.parse("2026-10-09T11:00:00Z"));
 });
 
 test("a las 2 horas avisa una sola vez", () => {

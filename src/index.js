@@ -95,7 +95,9 @@ async function publicarClips({ cliente, pedir, canalClips, usuarioTiktok, botId,
 // Avisa en #bumpeador cuando ya se puede volver a bumpear en DISBOARD
 async function recordarBump({ cliente, canalBump, rolBump, botId, ahora }) {
   try {
-    const { recordar, borrar } = revisarBump(await cliente.mensajes(canalBump, 50), { botId, ahora });
+    const { recordar, borrar, ultimoBump } = revisarBump(await cliente.mensajes(canalBump, 50), { botId, ahora });
+    const hace = ultimoBump ? `hace ${Math.round((ahora - ultimoBump) / 60000)} min` : "no encontrado en los últimos 50 mensajes";
+    console.log(`Bump: último ${hace}${recordar ? ", aviso enviado" : ""}.`);
     for (const id of borrar) await cliente.borrar(canalBump, id);
     if (recordar) await cliente.enviar(canalBump, mensajeBump(rolBump));
     return recordar;

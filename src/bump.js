@@ -33,7 +33,7 @@ export function revisarBump(mensajes, { botId, ahora }) {
   const yaAvisado = avisos.some((m) => fechaDeMensaje(m.id) >= ultimoBump);
   const disponible = ahora - ultimoBump >= ESPERA_MS;
 
-  return { recordar: disponible && !yaAvisado, borrar };
+  return { recordar: disponible && !yaAvisado, borrar, ultimoBump: ultimoBump || null };
 }
 
 export function mensajeBump(rolId) {
