@@ -109,10 +109,22 @@ async function recordarBump({ cliente, canalBump, rolBump, botId, ahora }) {
 }
 
 // Un meme de Reddit en #memes cada tanto (por defecto, cada 6 horas)
-async function publicarMeme({ cliente, pedir, canalMemes, subreddits, memesCada, botId, ahora }) {
+async function publicarMeme({ cliente, pedir, canalMemes, subreddits, memesCada, memesForzar, botId, ahora }) {
   try {
     // 500 mensajes: con memes seguidos, así no repite los de los últimos días
     const { links, ultimo } = publicadosAntes(await cliente.mensajes(canalMemes, 500), botId);
+    // Forzado (Run workflow → "publicar memes ahora"): uno de cada comunidad, ya
+    if (memesForzar) {
+      let publicados = 0;
+      for (const sub of subreddits) {
+        const meme = await buscarMeme([sub], links, pedir);
+        if (!meme) continue;
+        await cliente.enviar(canalMemes, mensajeMeme(meme));
+        links.add(meme.postLink);
+        publicados++;
+      }
+      return publicados > 0;
+    }
     if (!tocaPublicar({ ultimo, ahora, cada: memesCada })) return false;
     const meme = await buscarMeme(subreddits, links, pedir);
     if (!meme) return false;
@@ -125,7 +137,7 @@ async function publicarMeme({ cliente, pedir, canalMemes, subreddits, memesCada,
 }
 
 export async function ejecutar({
-  cliente, pedir, canalVincular, canalRanking, canalHistorial, canalClips, usuarioTiktok = "brosss.clips", canalBump, rolBump, canalMemes, subreddits = SUBREDDITS, memesCada,
+  cliente, pedir, canalVincular, canalRanking, canalHistorial, canalClips, usuarioTiktok = "brosss.clips", canalBump, rolBump, canalMemes, subreddits = SUBREDDITS, memesCada, memesForzar = false,
   claveLeetify, historial = null, ahora = Date.now(),
 }) {
   const registros = registrosDesdeMensajes(await cliente.mensajes(canalVincular));
@@ -162,7 +174,7 @@ export async function ejecutar({
 
   const bump = canalBump ? await recordarBump({ cliente, canalBump, rolBump, botId: yo.id, ahora }) : false;
 
-  const meme = canalMemes ? await publicarMeme({ cliente, pedir, canalMemes, subreddits, memesCada, botId: yo.id, ahora }) : false;
+  const meme = canalMemes ? await publicarMeme({ cliente, pedir, canalMemes, subreddits, memesCada, memesForzar, botId: yo.id, ahora }) : false;
 
   return { registrados: registros.length, enRanking: jugadores.length, partidas, clips, bump, meme, historial: historialNuevo };
 }
@@ -212,6 +224,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     canalMemes: CANAL_MEMES,
     subreddits: SUBS.length ? SUBS : undefined,
     memesCada: MEMES_CADA,
+    memesForzar: process.env.MEMES_FORZAR === "true",
     claveLeetify: LEETIFY_API_KEY,
     historial,
   });

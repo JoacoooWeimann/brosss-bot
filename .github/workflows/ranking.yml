@@ -6,6 +6,11 @@ on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
+    inputs:
+      memes_ahora:
+        description: "Publicar memes ahora (uno de cada comunidad), sin esperar"
+        type: boolean
+        default: false
 
 # Si una vuelta tarda, la siguiente espera (no se pisan)
 concurrency:
@@ -40,6 +45,7 @@ jobs:
           CANAL_MEMES: ${{ vars.CANAL_MEMES || secrets.CANAL_MEMES }}
           MEMES_SUBREDDITS: ${{ vars.MEMES_SUBREDDITS }}
           MEMES_CADA_MINUTOS: ${{ vars.MEMES_CADA_MINUTOS }}
+          MEMES_FORZAR: ${{ inputs.memes_ahora }}
       # Si cambió el historial de la semana, lo guarda en el repo
       - name: Guardar historial
         run: |
