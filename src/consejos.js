@@ -14,6 +14,22 @@ import { evaluar, idDeCanal, crearPedir } from "./index.js";
 
 const VERDE = 0x22e36b;
 const POR_MENSAJE = 10; // un embed por jugador; Discord acepta hasta 10 por mensaje
+const TITULO = "Consejos de la semana";
+// Si ya los publicó hace menos de esto, no repite. El workflow lo pueden
+// lanzar cron-job.org, el reloj de GitHub (que se atrasa) o alguien a mano.
+const MINIMO_ENTRE_ENVIOS_MS = 5 * 24 * 60 * 60 * 1000;
+
+const fechaDeMensaje = (id) => Number((BigInt(id) >> 22n) + 1420070400000n);
+
+// ¿El bot ya publicó los consejos esta semana?
+export function yaPublicados(mensajes, { botId, ahora }) {
+  return mensajes.some(
+    (m) =>
+      m.author?.id === botId &&
+      String(m.content ?? "").includes(TITULO) &&
+      ahora - fechaDeMensaje(m.id) < MINIMO_ENTRE_ENVIOS_MS
+  );
+}
 
 const workshop = (busqueda) =>
   `https://steamcommunity.com/workshop/browse/?appid=730&searchtext=${encodeURIComponent(busqueda)}`;
@@ -131,7 +147,7 @@ export function armarMensajes(jugadores, { canalVincular } = {}) {
   const mensajes = [];
   for (let i = 0; i < embeds.length; i += POR_MENSAJE) {
     mensajes.push({
-      content: i === 0 ? `## 📚 Consejos de la semana\nUn área para practicar, según tus partidas.${comoEntrar}` : undefined,
+      content: i === 0 ? `## 📚 ${TITULO}\nUn área para practicar, según tus partidas.${comoEntrar}` : undefined,
       embeds: embeds.slice(i, i + POR_MENSAJE),
       // Menciona sin notificar: no queremos un ping por semana
       allowed_mentions: { parse: [] },
@@ -140,7 +156,11 @@ export function armarMensajes(jugadores, { canalVincular } = {}) {
   return mensajes;
 }
 
-export async function ejecutarConsejos({ cliente, pedir, canalVincular, canalTips, claveLeetify }) {
+export async function ejecutarConsejos({ cliente, pedir, canalVincular, canalTips, claveLeetify, ahora = Date.now() }) {
+  const yo = await cliente.yo();
+  if (yaPublicados(await cliente.mensajes(canalTips, 50), { botId: yo.id, ahora })) {
+    return { jugadores: 0, mensajes: 0, repetido: true };
+  }
   const registros = registrosDesdeMensajes(await cliente.mensajes(canalVincular));
   const jugadores = [];
   for (const r of registros) {
@@ -149,7 +169,7 @@ export async function ejecutarConsejos({ cliente, pedir, canalVincular, canalTip
   }
   const mensajes = armarMensajes(jugadores, { canalVincular });
   for (const m of mensajes) await cliente.enviar(canalTips, m);
-  return { jugadores: jugadores.length, mensajes: mensajes.length };
+  return { jugadores: jugadores.length, mensajes: mensajes.length, repetido: false };
 }
 
 // ---------- Arranque (`node src/consejos.js`) ----------
@@ -172,5 +192,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     canalTips: CANAL_TIPS,
     claveLeetify: LEETIFY_API_KEY,
   });
-  console.log(`Listo: consejos para ${resumen.jugadores} jugadores en ${resumen.mensajes} mensajes.`);
+  console.log(
+    resumen.repetido
+      ? "Los consejos de esta semana ya estaban publicados: no se repiten."
+      : `Listo: consejos para ${resumen.jugadores} jugadores en ${resumen.mensajes} mensajes.`
+  );
 }

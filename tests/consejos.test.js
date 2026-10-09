@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { AREAS, distancia, puntoFlojo, embedJugador, armarMensajes, ejecutarConsejos } from "../src/consejos.js";
+import { AREAS, distancia, puntoFlojo, embedJugador, armarMensajes, ejecutarConsejos, yaPublicados } from "../src/consejos.js";
+
+const idEn = (ms) => String((BigInt(ms) - 1420070400000n) << 22n);
 
 test("cada área tiene todo lo que necesita el mensaje", () => {
   for (const [nombre, a] of Object.entries(AREAS)) {
@@ -56,7 +58,8 @@ test("de a 10 por mensaje, sin notificar a nadie y con el título solo en el pri
 test("vuelta completa: solo los que están en Leetify reciben consejo", async () => {
   const enviados = [];
   const cliente = {
-    mensajes: async () => [
+    yo: async () => ({ id: "bot" }),
+    mensajes: async (canal) => canal === "t" ? [] : [
       { id: "1", content: "76561190000000001", author: { id: "a", username: "a" } },
       { id: "2", content: "76561190000000002", author: { id: "b", username: "b" } },
     ],
@@ -67,7 +70,23 @@ test("vuelta completa: solo los que están en Leetify reciben consejo", async ()
       ? { status: 200, ok: true, json: async () => ({ privacy_mode: "public", ranks: {}, stats: { accuracy_head: 12 } }) }
       : { status: 404, ok: false };
   const r = await ejecutarConsejos({ cliente, pedir, canalVincular: "v", canalTips: "t" });
-  assert.deepEqual(r, { jugadores: 1, mensajes: 1 });
+  assert.deepEqual(r, { jugadores: 1, mensajes: 1, repetido: false });
   assert.equal(enviados[0].canal, "t");
   assert.match(enviados[0].cuerpo.embeds[0].description, /<@a>.*Headshots/);
+});
+
+test("no repite los consejos si ya salieron en los últimos 5 días", async () => {
+  const ahora = Date.parse("2026-10-09T20:00:00Z");
+  const publicado = { id: idEn(Date.parse("2026-10-09T15:16:00Z")), author: { id: "bot" }, content: "## 📚 Consejos de la semana\n…" };
+  assert.equal(yaPublicados([publicado], { botId: "bot", ahora }), true);
+  // El de la semana pasada no cuenta
+  assert.equal(yaPublicados([{ ...publicado, id: idEn(Date.parse("2026-10-02T15:16:00Z")) }], { botId: "bot", ahora }), false);
+  // Uno igual pero de otra persona tampoco
+  assert.equal(yaPublicados([{ ...publicado, author: { id: "persona" } }], { botId: "bot", ahora }), false);
+
+  const enviados = [];
+  const cliente = { yo: async () => ({ id: "bot" }), mensajes: async () => [publicado], enviar: async (...a) => enviados.push(a) };
+  const r = await ejecutarConsejos({ cliente, pedir: async () => ({}), canalVincular: "v", canalTips: "t", ahora });
+  assert.equal(r.repetido, true);
+  assert.equal(enviados.length, 0);
 });
