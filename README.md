@@ -41,8 +41,8 @@ En este repositorio → **Settings → Secrets and variables → Actions**:
 |---|---|---|
 | Secrets | `DISCORD_TOKEN` | el token del paso 1 |
 | Secrets | `LEETIFY_API_KEY` | *(opcional)* clave de Leetify, sube el límite de pedidos |
-| Variables | `CANAL_VINCULAR` | ID de #vincular |
-| Variables | `CANAL_RANKING` | ID de #ranking |
+| Variables (o Secrets) | `CANAL_VINCULAR` | ID de #vincular |
+| Variables (o Secrets) | `CANAL_RANKING` | ID de #ranking |
 
 ### 4. Probarlo
 **Actions → Ranking CS2 → Run workflow.** En menos de un minuto aparece el ranking en el canal.
