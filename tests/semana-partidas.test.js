@@ -76,12 +76,12 @@ test("junta en una sola partida a los registrados que jugaron juntos", () => {
   const joaco = { steamId: "2", nombre: "Joaco" };
   const lista = agrupar(
     [
-      { jugador: kyo, partidas: [partida("m1", "1", "2026-10-08T04:00:00Z"), partida("m0", "1", "2026-10-07T10:00:00Z")] },
+      { jugador: kyo, partidas: [partida("m1", "1", "2026-10-08T04:00:00Z"), partida("m0", "1", "2026-10-06T05:00:00Z")] },
       { jugador: joaco, partidas: [partida("m1", "2", "2026-10-08T04:00:00Z", { leetify_rating: 0.2 }), partida("m2", "2", "2026-10-08T05:00:00Z")] },
     ],
     { ahora, publicadas: new Set([urlPartida("m2")]) }
   );
-  // m0 es de hace más de 12 horas y m2 ya estaba publicada
+  // m0 es de hace más de 48 horas y m2 ya estaba publicada
   assert.deepEqual(lista.map((p) => p.id), ["m1"]);
   assert.deepEqual(lista[0].jugadores.map((x) => x.nombre), ["Kyo", "Joaco"]);
 });

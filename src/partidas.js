@@ -8,7 +8,7 @@
 // =============================================================
 
 const LEETIFY = "https://api-public.cs-prod.leetify.com";
-const VENTANA_MS = 12 * 60 * 60 * 1000; // solo partidas de las últimas 12 horas
+const VENTANA_MS = 48 * 60 * 60 * 1000; // solo partidas de las últimas 48 horas
 const VERDE = 0x22e36b;
 const ROJO = 0xff4d4d;
 const GRIS = 0x9aa5b1;
