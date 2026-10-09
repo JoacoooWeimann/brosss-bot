@@ -1,6 +1,6 @@
-# BROSSS Bot · Ranking y consejos de CS2
+# BROSSS Bot
 
-Bot del Discord de **BROSSS**: arma un ranking de CS2 con el **CS Rating de Premier**, el **nivel y ELO de FACEIT** y stats de **Leetify**, y lo mantiene actualizado en un canal.
+Bot del Discord de **BROSSS**: arma un ranking de CS2 con el **CS Rating de Premier**, el **nivel y ELO de FACEIT** y stats de **Leetify**, publica las partidas y consejos semanales, y sube los clips nuevos de TikTok.
 
 No necesita un servidor prendido: **GitHub Actions** lo corre cada 15 minutos, hace su trabajo y termina.
 
@@ -20,6 +20,11 @@ El ranking muestra quién **más subió de Premier** desde el viernes a las 12 y
 Cada partida que juegan los registrados aparece en **#historial**: victoria o derrota, mapa, modo, resultado y las stats de cada uno (K/D/A, ADR, HS y rating de Leetify). Si varios jugaron juntos, va un solo resumen con todos, y el de mejor rating lleva ⭐. El título lleva a la partida completa en Leetify.
 
 Solo publica partidas de las últimas 48 horas, y para no repetir mira lo que ya publicó en el canal. Es opcional: si no está `CANAL_HISTORIAL`, se saltea.
+
+### 🎬 Clips de TikTok (#clips)
+Cada 15 minutos revisa la cuenta **@brosss.clips** y publica en **#clips** los videos nuevos (de los últimos 3 días), con el link para que Discord muestre el reproductor. Para no repetir, mira lo que ya publicó en el canal.
+
+TikTok no tiene API pública: el bot lee la página de "embed de creador". Si TikTok la cambia o la bloquea, el ranking sigue andando y el log de Actions muestra `Clips: …`. Es opcional: sin `CANAL_CLIPS` se saltea. Para usar otra cuenta, agregá la variable `TIKTOK_USUARIO`.
 
 ### Consejos semanales (#tips)
 Todos los **viernes a las 12** (hora de Argentina), el bot busca el punto más flojo de cada jugador de #vincular entre 12 áreas de Leetify (puntería, headshots, preaim, spray, counter-strafe, utilidad, flashes, tradeos…) y publica en **#tips** qué practicar, con un mapa de workshop y videos. Menciona a cada uno **sin notificar**.
@@ -57,6 +62,7 @@ En este repositorio → **Settings → Secrets and variables → Actions**:
 | Variables (o Secrets) | `CANAL_VINCULAR` | ID de #vincular |
 | Variables (o Secrets) | `CANAL_RANKING` | ID de #ranking |
 | Variables (o Secrets) | `CANAL_HISTORIAL` | ID de #historial (para los resúmenes de partidas) |
+| Variables (o Secrets) | `CANAL_CLIPS` | ID de #clips (para los videos de TikTok) |
 | Variables (o Secrets) | `CANAL_TIPS` | ID de #tips (para los consejos) |
 
 ### 4. Probarlo
@@ -79,6 +85,7 @@ No hace falta `npm install`: no tiene dependencias (usa `fetch` y `node:test`, q
 | `src/consejos.js` | Consejos semanales: punto flojo de cada jugador y qué practicar |
 | `src/semana.js` | Jugador de la semana: historial del Premier desde el viernes |
 | `src/partidas.js` | Resúmenes de partidas para #historial |
+| `src/tiktok.js` | Videos nuevos de TikTok para #clips |
 | `src/ranking.js` | Arma el embed: tabla ordenada, colores de Premier y destacados |
 | `src/discord.js` | Cliente mínimo de la API de Discord |
 

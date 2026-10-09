@@ -15,6 +15,7 @@ import { registrosDesdeMensajes, OK, ERROR, MOTIVOS } from "./vincular.js";
 import { armarEmbed } from "./ranking.js";
 import * as semana from "./semana.js";
 import { consultarPartidas, agrupar, embedPartida, yaPublicadas } from "./partidas.js";
+import { consultarTiktok, videosNuevos, mensajeVideo } from "./tiktok.js";
 
 const ESPERA_MAXIMA_MS = 8000;
 const EN_PARALELO = 4; // para no saturar a Leetify
@@ -74,8 +75,25 @@ async function publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, 
   }
 }
 
+// Publica en #clips los videos nuevos de la cuenta de TikTok.
+// Igual que el historial: si falla, el ranking sigue.
+async function publicarClips({ cliente, pedir, canalClips, usuarioTiktok, botId, ahora }) {
+  try {
+    const publicados = new Set(
+      (await cliente.mensajes(canalClips, 100)).filter((m) => m.author?.id === botId).map((m) => m.content ?? "")
+    );
+    const nuevos = videosNuevos(await consultarTiktok(usuarioTiktok, pedir), { ahora, publicados });
+    for (const v of nuevos) await cliente.enviar(canalClips, mensajeVideo(usuarioTiktok, v));
+    return nuevos.length;
+  } catch (error) {
+    console.warn(`Clips: ${error.message}`);
+    return 0;
+  }
+}
+
 export async function ejecutar({
-  cliente, pedir, canalVincular, canalRanking, canalHistorial, claveLeetify, historial = null, ahora = Date.now(),
+  cliente, pedir, canalVincular, canalRanking, canalHistorial, canalClips, usuarioTiktok = "brosss.clips",
+  claveLeetify, historial = null, ahora = Date.now(),
 }) {
   const registros = registrosDesdeMensajes(await cliente.mensajes(canalVincular));
   const resultados = await enTandas(registros, EN_PARALELO, (r) => evaluar(r, { pedir, claveLeetify }));
@@ -107,7 +125,9 @@ export async function ejecutar({
     ? await publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, jugadores, botId: yo.id, ahora })
     : 0;
 
-  return { registrados: registros.length, enRanking: jugadores.length, partidas, historial: historialNuevo };
+  const clips = canalClips ? await publicarClips({ cliente, pedir, canalClips, usuarioTiktok, botId: yo.id, ahora }) : 0;
+
+  return { registrados: registros.length, enRanking: jugadores.length, partidas, clips, historial: historialNuevo };
 }
 
 export const crearPedir = () => (url, cabeceras = {}) =>
@@ -123,6 +143,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const CANAL_VINCULAR = idDeCanal(process.env.CANAL_VINCULAR);
   const CANAL_RANKING = idDeCanal(process.env.CANAL_RANKING);
   const CANAL_HISTORIAL = idDeCanal(process.env.CANAL_HISTORIAL); // opcional
+  const CANAL_CLIPS = idDeCanal(process.env.CANAL_CLIPS); // opcional
   const faltan = Object.entries({ DISCORD_TOKEN, CANAL_VINCULAR, CANAL_RANKING })
     .filter(([, v]) => !v)
     .map(([k]) => k);
@@ -139,12 +160,14 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     canalVincular: CANAL_VINCULAR,
     canalRanking: CANAL_RANKING,
     canalHistorial: CANAL_HISTORIAL,
+    canalClips: CANAL_CLIPS,
+    usuarioTiktok: process.env.TIKTOK_USUARIO || undefined,
     claveLeetify: LEETIFY_API_KEY,
     historial,
   });
   const cambio = await semana.guardar(resumen.historial, historial);
   console.log(
     `Listo: ${resumen.enRanking} de ${resumen.registrados} jugadores en el ranking, ` +
-      `${resumen.partidas} partidas nuevas en el historial${cambio ? ", historial de la semana actualizado" : ""}.`
+      `${resumen.partidas} partidas nuevas en el historial, ${resumen.clips} clips nuevos${cambio ? ", historial de la semana actualizado" : ""}.`
   );
 }

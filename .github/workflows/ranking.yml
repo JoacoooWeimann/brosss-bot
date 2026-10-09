@@ -33,6 +33,8 @@ jobs:
           CANAL_VINCULAR: ${{ vars.CANAL_VINCULAR || secrets.CANAL_VINCULAR }}
           CANAL_RANKING: ${{ vars.CANAL_RANKING || secrets.CANAL_RANKING }}
           CANAL_HISTORIAL: ${{ vars.CANAL_HISTORIAL || secrets.CANAL_HISTORIAL }}
+          CANAL_CLIPS: ${{ vars.CANAL_CLIPS || secrets.CANAL_CLIPS }}
+          TIKTOK_USUARIO: ${{ vars.TIKTOK_USUARIO }}
       # Si cambió el historial de la semana, lo guarda en el repo
       - name: Guardar historial
         run: |
