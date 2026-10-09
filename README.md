@@ -73,7 +73,7 @@ En este repositorio → **Settings → Secrets and variables → Actions**:
 | Variables (o Secrets) | `CANAL_BUMP` | ID de #bumpeador (para el recordatorio) |
 | Variables (o Secrets) | `ROL_BUMP` | *(opcional)* ID del rol al que avisa |
 | Variables (o Secrets) | `CANAL_MEMES` | ID de #memes (Reddit y meme de la semana) |
-| Variables (o Secrets) | `ROL_MEME` | *(opcional)* ID del rol 『🤣』Memero de la semana |
+| Variables (o Secrets) | `ROL_MEME` | *(opcional)* ID del rol 『🤣』Momero de la semana |
 | Variables (o Secrets) | `CANAL_TIPS` | ID de #tips (para los consejos) |
 
 ### 4. Probarlo
