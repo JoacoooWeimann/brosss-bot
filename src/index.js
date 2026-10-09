@@ -108,11 +108,12 @@ async function recordarBump({ cliente, canalBump, rolBump, botId, ahora }) {
   }
 }
 
-// Un meme de Reddit en #memes cada 6 horas
-async function publicarMeme({ cliente, pedir, canalMemes, subreddits, botId, ahora }) {
+// Un meme de Reddit en #memes cada tanto (por defecto, cada 6 horas)
+async function publicarMeme({ cliente, pedir, canalMemes, subreddits, memesCada, botId, ahora }) {
   try {
-    const { links, ultimo } = publicadosAntes(await cliente.mensajes(canalMemes, 100), botId);
-    if (!tocaPublicar({ ultimo, ahora })) return false;
+    // 500 mensajes: con memes seguidos, así no repite los de los últimos días
+    const { links, ultimo } = publicadosAntes(await cliente.mensajes(canalMemes, 500), botId);
+    if (!tocaPublicar({ ultimo, ahora, cada: memesCada })) return false;
     const meme = await buscarMeme(subreddits, links, pedir);
     if (!meme) return false;
     await cliente.enviar(canalMemes, mensajeMeme(meme));
@@ -124,7 +125,7 @@ async function publicarMeme({ cliente, pedir, canalMemes, subreddits, botId, aho
 }
 
 export async function ejecutar({
-  cliente, pedir, canalVincular, canalRanking, canalHistorial, canalClips, usuarioTiktok = "brosss.clips", canalBump, rolBump, canalMemes, subreddits = SUBREDDITS,
+  cliente, pedir, canalVincular, canalRanking, canalHistorial, canalClips, usuarioTiktok = "brosss.clips", canalBump, rolBump, canalMemes, subreddits = SUBREDDITS, memesCada,
   claveLeetify, historial = null, ahora = Date.now(),
 }) {
   const registros = registrosDesdeMensajes(await cliente.mensajes(canalVincular));
@@ -161,7 +162,7 @@ export async function ejecutar({
 
   const bump = canalBump ? await recordarBump({ cliente, canalBump, rolBump, botId: yo.id, ahora }) : false;
 
-  const meme = canalMemes ? await publicarMeme({ cliente, pedir, canalMemes, subreddits, botId: yo.id, ahora }) : false;
+  const meme = canalMemes ? await publicarMeme({ cliente, pedir, canalMemes, subreddits, memesCada, botId: yo.id, ahora }) : false;
 
   return { registrados: registros.length, enRanking: jugadores.length, partidas, clips, bump, meme, historial: historialNuevo };
 }
@@ -184,7 +185,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const ROL_BUMP = idDeCanal(process.env.ROL_BUMP); // opcional (sirve igual para IDs de rol)
   const CANAL_MEMES = idDeCanal(process.env.CANAL_MEMES); // opcional
   // Ej.: "MemesEnEspanol,csgomemes"
-  const SUBS = (process.env.MEMES_SUBREDDITS ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+  const SUBS = (process.env.MEMES_SUBREDDITS ?? "").split(",").map((x) => x.trim().replace(/^r\//i, "")).filter(Boolean);
+  // Mínimo 15 minutos: más seguido no se puede, el bot corre cada 15
+  const minutos = Number(process.env.MEMES_CADA_MINUTOS);
+  const MEMES_CADA = Number.isFinite(minutos) && minutos > 0 ? Math.max(15, minutos) * 60 * 1000 : undefined;
   const faltan = Object.entries({ DISCORD_TOKEN, CANAL_VINCULAR, CANAL_RANKING })
     .filter(([, v]) => !v)
     .map(([k]) => k);
@@ -207,6 +211,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     rolBump: ROL_BUMP,
     canalMemes: CANAL_MEMES,
     subreddits: SUBS.length ? SUBS : undefined,
+    memesCada: MEMES_CADA,
     claveLeetify: LEETIFY_API_KEY,
     historial,
   });

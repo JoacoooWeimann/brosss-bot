@@ -2,12 +2,16 @@
 //  MEMES DE REDDIT → #MEMES
 //  Reddit bloquea los pedidos de bots, así que se usa meme-api.com,
 //  que devuelve los posts de imagen de un subreddit. Publica uno
-//  cada 6 horas (entre las 10 y las 2 de Argentina), con votos
-//  suficientes, sin NSFW ni spoilers y sin repetir.
+//  cada tanto (MEMES_CADA_MINUTOS, por defecto 6 horas) entre las
+//  10 y las 2 de Argentina, con votos suficientes, sin NSFW ni
+//  spoilers y sin repetir.
 // =============================================================
 
 const API = "https://meme-api.com/gimme";
 export const CADA_MS = 6 * 60 * 60 * 1000;
+// Las vueltas no caen justo cada 15 minutos (a veces 14:50): un margen
+// evita que se saltee una
+const MARGEN_MS = 3 * 60 * 1000;
 const VOTOS_MINIMOS = 30;
 const MARCA = "📥 Meme del día"; // así reconoce los suyos (va en el pie del embed)
 export const SUBREDDITS = ["MemesEnEspanol", "csgomemes"];
@@ -28,10 +32,10 @@ export function publicadosAntes(mensajes, botId) {
   };
 }
 
-export function tocaPublicar({ ultimo, ahora }) {
+export function tocaPublicar({ ultimo, ahora, cada = CADA_MS }) {
   const hora = horaArgentina(ahora);
   const despierto = hora >= 10 || hora < 2; // de noche no publica
-  return despierto && ahora - ultimo >= CADA_MS;
+  return despierto && ahora - ultimo >= cada - MARGEN_MS;
 }
 
 const esImagen = (url) => /^https:\/\/(i\.redd\.it|i\.imgur\.com)\/[\w-]+\.(png|jpe?g|gif|webp)$/i.test(String(url));

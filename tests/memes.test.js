@@ -28,6 +28,12 @@ test("publica cada 6 horas y nunca de madrugada", () => {
   assert.equal(tocaPublicar({ ultimo: 0, ahora: Date.parse("2026-10-10T04:30:00Z") }), true); // 1:30 AR
 });
 
+test("con 15 minutos publica en cada vuelta, aunque llegue unos segundos antes", () => {
+  const ultimo = Date.parse("2026-10-09T23:00:17Z");
+  assert.equal(tocaPublicar({ ultimo, ahora: Date.parse("2026-10-09T23:15:05Z"), cada: 15 * 60e3 }), true);
+  assert.equal(tocaPublicar({ ultimo, ahora: Date.parse("2026-10-09T23:05:00Z"), cada: 15 * 60e3 }), false);
+});
+
 test("elige el más votado apto: sin NSFW, spoilers, pocos votos, videos ni repetidos", () => {
   const lista = [
     meme({ postLink: "1", ups: 5000, nsfw: true }),

@@ -39,6 +39,7 @@ jobs:
           ROL_BUMP: ${{ vars.ROL_BUMP || secrets.ROL_BUMP }}
           CANAL_MEMES: ${{ vars.CANAL_MEMES || secrets.CANAL_MEMES }}
           MEMES_SUBREDDITS: ${{ vars.MEMES_SUBREDDITS }}
+          MEMES_CADA_MINUTOS: ${{ vars.MEMES_CADA_MINUTOS }}
       # Si cambió el historial de la semana, lo guarda en el repo
       - name: Guardar historial
         run: |
