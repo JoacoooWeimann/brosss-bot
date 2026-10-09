@@ -90,6 +90,7 @@ No hace falta `npm install`: no tiene dependencias (usa `fetch` y `node:test`, q
 | `src/discord.js` | Cliente mínimo de la API de Discord |
 
 ## A tener en cuenta
-- GitHub puede atrasar las tareas programadas unos minutos cuando está cargado.
+- **Quién lo corre cada 15 minutos:** [cron-job.org](https://cron-job.org) llama a la API de GitHub (`POST /repos/JoacoooWeimann/brosss-bot/actions/workflows/ranking.yml/dispatches` con `{"ref":"main"}`), porque las tareas programadas de GitHub no arrancaron en este repo. Usa un *fine-grained token* con permiso **Actions: Read and write** solo para este repo: **cuando vence, el bot deja de actualizarse**. Renovalo en GitHub y pegá el nuevo en cron-job.org. Si las de GitHub arrancan algún día, no pasa nada: las vueltas no se pisan y nada se publica dos veces.
+- GitHub puede atrasar las tareas programadas unos minutos cuando está cargado. Los consejos de los viernes dependen de ellas: si no salen, corré **Consejos semanales** a mano o agregá otra tarea en cron-job.org con `consejos.yml`.
 - En repositorios públicos, GitHub **pausa las tareas programadas después de 60 días sin commits**. Si el ranking deja de actualizarse, entrá a Actions y volvé a activarlo.
 - El token nunca está en el código: solo en los Secrets de GitHub, que no se ven en los logs.
