@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { slugDeKick, leerConfigWeb, juntarStreamers, resumirCanal, duracion } from "../src/kick.js";
 import { alertasPrevias, revisarStreams, mensajeEnVivo, embedTerminado } from "../src/streams.js";
-import { embedRedes, hayCambios } from "../src/redes.js";
+import { embedsRedes, hayCambios, TITULO, IMAGENES } from "../src/redes.js";
 
 // ---------- Kick ----------
 
@@ -94,23 +94,43 @@ test("la alerta terminada dice cuánto duró y ya no cuenta como abierta", () =>
 
 // ---------- #redes ----------
 
-test("la tarjeta de redes: página, TikTok, Kick con el que está en vivo primero, e invitación", () => {
-  const e = embedRedes({
+test("la tarjeta de redes: portada, página, TikTok, Kick e invitación, cada una con su color", () => {
+  const embeds = embedsRedes({
     streamers: [
       { streamer: { nombre: "Joacooo", slug: "joacooow" }, canal: { enVivo: false } },
-      { streamer: ibran, canal: { ...enVivo("1"), espectadores: 12 } },
+      { streamer: ibran, canal: { ...enVivo("1"), espectadores: 12, miniatura: "https://x/t.jpg" } },
       { streamer: { nombre: null, slug: "nuevo" }, canal: null },
     ],
-    tiktok: { usuario: "brosss.clips", videos: [{ id: "123", titulo: "tomatomatoma" }] },
+    tiktok: { usuario: "brosss.clips", videos: [{ id: "123", titulo: "tomatomatoma", vistas: 1500 }] },
     invitacion: "th8xGPTBDX",
+    stats: { miembros: 147, conectados: 19 },
   });
-  const d = e.description;
-  assert.match(d, /Página.*brosssdiscord\.netlify\.app/);
-  assert.match(d, /TikTok:\*\* \[@brosss\.clips\].*último clip: \[tomatomatoma\]\(https:\/\/www\.tiktok\.com\/@brosss\.clips\/video\/123\)/);
-  assert.ok(d.indexOf("iBranDou") < d.indexOf("Joacooo"));
-  assert.match(d, /🔴 \[iBranDou\].*en vivo.*Rankeds.*12 👀/);
-  assert.match(d, /▫️ \[nuevo\]\(https:\/\/kick\.com\/nuevo\)/); // Kick no respondió: no dice "offline"
-  assert.match(d, /discord\.gg\/th8xGPTBDX/);
-  assert.equal(hayCambios({ embeds: [{ description: d }] }, e), false);
-  assert.equal(hayCambios(null, e), true);
+  assert.equal(embeds.length, 5);
+  const [portada, web, tiktok, kick, inv] = embeds;
+  assert.equal(portada.title, TITULO);
+  assert.equal(portada.image.url, IMAGENES.banner);
+  assert.match(portada.description, /\*\*147\*\* miembros.*\*\*19\*\* conectados/);
+  assert.equal(web.url, "https://brosssdiscord.netlify.app");
+  assert.deepEqual(tiktok.fields.map((f) => f.value), ["[tomatomatoma](https://www.tiktok.com/@brosss.clips/video/123)", "1.500"]);
+  // Kick: el que está en vivo es el destacado, va primero y muestra su directo
+  assert.equal(kick.title, "🔴 iBranDou está en vivo");
+  assert.equal(kick.image.url, "https://x/t.jpg");
+  assert.deepEqual(kick.fields.map((f) => f.name), ["🔴 iBranDou", "⚫ Joacooo", "▫️ nuevo"]);
+  assert.match(kick.fields[0].value, /EN VIVO.*12 👀/);
+  assert.equal(inv.url, "https://discord.gg/th8xGPTBDX");
+  assert.equal(new Set(embeds.map((e) => e.color)).size, 4);
+});
+
+test("sin nadie en vivo, Kick no tiene imagen; sin stats, la portada igual sale", () => {
+  const [portada, , kick] = embedsRedes({ streamers: [{ streamer: ibran, canal: { enVivo: false } }] });
+  assert.ok(!/miembros/.test(portada.description));
+  assert.equal(kick.title, "Nuestros streamers");
+  assert.equal(kick.image, undefined);
+});
+
+test("solo edita si cambió algo visible", () => {
+  const embeds = embedsRedes({ invitacion: "abc", stats: { miembros: 1, conectados: 1 } });
+  assert.equal(hayCambios({ embeds: structuredClone(embeds) }, embeds), false);
+  assert.equal(hayCambios({ embeds }, embedsRedes({ invitacion: "abc", stats: { miembros: 2, conectados: 1 } })), true);
+  assert.equal(hayCambios(null, embeds), true);
 });

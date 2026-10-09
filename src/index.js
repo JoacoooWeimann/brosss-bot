@@ -22,7 +22,7 @@ import { revisarBump, mensajeBump } from "./bump.js";
 import { publicadosAntes, tocaPublicar, buscarMeme, mensajeMeme, SUBREDDITS } from "./memes.js";
 import { cargarConfigWeb, juntarStreamers, consultarCanal } from "./kick.js";
 import { alertasPrevias, revisarStreams, mensajeEnVivo, embedTerminado } from "./streams.js";
-import { embedRedes, hayCambios, TITULO as TITULO_REDES } from "./redes.js";
+import { embedsRedes, consultarStats, hayCambios, TITULO as TITULO_REDES } from "./redes.js";
 
 const ESPERA_MAXIMA_MS = 8000;
 const EN_PARALELO = 4; // para no saturar a Leetify
@@ -185,16 +185,18 @@ async function streamsYRedes({ cliente, pedir, canalStreams, canalRedes, rolStre
 
   if (canalRedes) {
     try {
-      const embed = embedRedes({
+      const embeds = embedsRedes({
         streamers: estados,
         tiktok: { usuario: usuarioTiktok, videos: videos ?? [] },
         invitacion: configWeb.codigoInvitacion,
+        stats: await consultarStats(configWeb.codigoInvitacion, pedir).catch(() => null),
       });
-      const propio = (await cliente.mensajes(canalRedes, 50)).find(
-        (m) => m.author?.id === botId && m.embeds?.[0]?.title === TITULO_REDES
-      );
-      if (!propio) await cliente.enviar(canalRedes, { embeds: [embed], allowed_mentions: { parse: [] } });
-      else if (hayCambios(propio, embed)) await cliente.editar(canalRedes, propio.id, { embeds: [embed] });
+      const mensajes = await cliente.mensajes(canalRedes, 50);
+      const propio = mensajes.find((m) => m.author?.id === botId && m.embeds?.[0]?.title === TITULO_REDES);
+      // La tarjeta vieja (de un solo bloque) se reemplaza por la nueva
+      for (const viejo of mensajes.filter((m) => m.author?.id === botId && m !== propio)) await cliente.borrar(canalRedes, viejo.id);
+      if (!propio) await cliente.enviar(canalRedes, { embeds, allowed_mentions: { parse: [] } });
+      else if (hayCambios(propio, embeds)) await cliente.editar(canalRedes, propio.id, { embeds });
     } catch (error) {
       console.warn(`Redes: ${error.message}`);
     }

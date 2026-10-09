@@ -54,7 +54,12 @@ export function leerVideos(html) {
   if (!lista) return null;
   return lista
     .filter((v) => /^\d{15,20}$/.test(String(v.id)) && !v.privateItem)
-    .map((v) => ({ id: String(v.id), titulo: limpiarTitulo(v.desc), fecha: fechaDeId(v.id) }));
+    .map((v) => ({
+      id: String(v.id),
+      titulo: limpiarTitulo(v.desc),
+      fecha: fechaDeId(v.id),
+      vistas: Number.isFinite(v.playCount) ? v.playCount : null,
+    }));
 }
 
 // TikTok corta a veces los pedidos automáticos (503 o 429). Se reintenta
