@@ -1,0 +1,14 @@
+{
+  "name": "brosss-bot",
+  "version": "1.0.0",
+  "description": "Bot del Discord de BROSSS: ranking de CS2 con Leetify",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "start": "node src/index.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

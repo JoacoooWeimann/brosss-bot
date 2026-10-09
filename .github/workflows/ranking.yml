@@ -1,0 +1,33 @@
+# Actualiza el ranking de CS2 del Discord cada 15 minutos.
+# También se puede correr a mano: Actions → Ranking CS2 → Run workflow.
+name: Ranking CS2
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+# Si una vuelta tarda, la siguiente espera (no se pisan)
+concurrency:
+  group: ranking
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+      - run: node src/index.js
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          LEETIFY_API_KEY: ${{ secrets.LEETIFY_API_KEY }}
+          CANAL_VINCULAR: ${{ vars.CANAL_VINCULAR }}
+          CANAL_RANKING: ${{ vars.CANAL_RANKING }}
