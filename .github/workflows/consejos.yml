@@ -1,0 +1,28 @@
+# Consejos personalizados en #tips, todos los lunes a las 12 (Argentina).
+# También se puede correr a mano: Actions → Consejos semanales → Run workflow.
+name: Consejos semanales
+
+on:
+  schedule:
+    - cron: "0 15 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  consejos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm test
+      - run: node src/consejos.js
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          LEETIFY_API_KEY: ${{ secrets.LEETIFY_API_KEY }}
+          CANAL_VINCULAR: ${{ vars.CANAL_VINCULAR || secrets.CANAL_VINCULAR }}
+          CANAL_TIPS: ${{ vars.CANAL_TIPS || secrets.CANAL_TIPS }}

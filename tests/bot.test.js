@@ -36,7 +36,10 @@ test("se queda con las stats que usa el ranking y descarta valores raros", () =>
     rating: { aim: 95.9 },
     stats: { accuracy_head: 25.5 },
   });
-  assert.deepEqual(p, { nombre: "kyo", premier: 18604, faceit: 7, faceitElo: 1629, aim: 95.9, hs: 25.5, winrate: 0.5, partidas: 855 });
+  const { areas, ...resto } = p;
+  assert.deepEqual(resto, { nombre: "kyo", premier: 18604, faceit: 7, faceitElo: 1629, aim: 95.9, hs: 25.5, winrate: 0.5, partidas: 855 });
+  assert.equal(areas.aim, 95.9);
+  assert.equal(areas.preaim, null);
   const raro = leerPerfil({ ranks: { premier: 0, faceit: 99, faceit_elo: "1000" } });
   assert.equal(raro.premier, null);
   assert.equal(raro.faceit, null);

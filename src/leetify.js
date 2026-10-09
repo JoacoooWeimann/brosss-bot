@@ -24,6 +24,27 @@ export function leerPerfil(datos) {
     hs: numero(datos?.stats?.accuracy_head),
     winrate: numero(datos?.winrate),
     partidas: positivo(datos?.total_matches),
+    areas: leerAreas(datos),
+  };
+}
+
+// Las stats que usan los consejos semanales (src/consejos.js)
+export function leerAreas(datos) {
+  const r = datos?.rating ?? {};
+  const s = datos?.stats ?? {};
+  return {
+    aim: numero(r.aim),
+    posicionamiento: numero(r.positioning),
+    utilidad: numero(r.utility),
+    hs: numero(s.accuracy_head),
+    preaim: numero(s.preaim),
+    reaccion: numero(s.reaction_time_ms),
+    spray: numero(s.spray_accuracy),
+    counterstrafe: numero(s.counter_strafing_good_shots_ratio),
+    flashes: numero(s.flashbang_hit_foe_per_flashbang),
+    flashAmigos: numero(s.flashbang_hit_friend_per_flashbang),
+    tradeos: numero(s.traded_deaths_success_percentage),
+    utilidadSinUsar: numero(s.utility_on_death_avg),
   };
 }
 

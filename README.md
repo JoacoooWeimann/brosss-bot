@@ -1,4 +1,4 @@
-# BROSSS Bot · Ranking CS2
+# BROSSS Bot · Ranking y consejos de CS2
 
 Bot del Discord de **BROSSS**: arma un ranking de CS2 con el **CS Rating de Premier**, el **nivel y ELO de FACEIT** y stats de **Leetify**, y lo mantiene actualizado en un canal.
 
@@ -12,6 +12,11 @@ No necesita un servidor prendido: **GitHub Actions** lo corre cada 15 minutos, h
 4. Edita el mensaje fijo de **#🏆・ranking**. La primera vez lo crea.
 
 Para salir del ranking, el jugador borra su mensaje. Si manda otro link, vale el más nuevo.
+
+### Consejos semanales (#tips)
+Todos los **lunes a las 12** (hora de Argentina), el bot busca el punto más flojo de cada jugador de #vincular entre 12 áreas de Leetify (puntería, headshots, preaim, spray, counter-strafe, utilidad, flashes, tradeos…) y publica en **#tips** qué practicar, con un mapa de workshop y videos. Menciona a cada uno **sin notificar**.
+
+Los objetivos de cada área están en `src/consejos.js` (`AREAS`): son valores de buen nivel aproximados, ajustalos si salen siempre los mismos consejos.
 
 ### Qué tiene que hacer cada jugador
 - Entrar **una vez** a [leetify.com](https://leetify.com) con su cuenta de Steam.
@@ -43,6 +48,7 @@ En este repositorio → **Settings → Secrets and variables → Actions**:
 | Secrets | `LEETIFY_API_KEY` | *(opcional)* clave de Leetify, sube el límite de pedidos |
 | Variables (o Secrets) | `CANAL_VINCULAR` | ID de #vincular |
 | Variables (o Secrets) | `CANAL_RANKING` | ID de #ranking |
+| Variables (o Secrets) | `CANAL_TIPS` | ID de #tips (para los consejos) |
 
 ### 4. Probarlo
 **Actions → Ranking CS2 → Run workflow.** En menos de un minuto aparece el ranking en el canal.
@@ -61,6 +67,7 @@ No hace falta `npm install`: no tiene dependencias (usa `fetch` y `node:test`, q
 | `src/vincular.js` | Saca un registro por persona de los mensajes de #vincular |
 | `src/steam.js` | Entiende el link de Steam y lo pasa a ID de 64 bits |
 | `src/leetify.js` | Consulta Leetify (Premier, FACEIT, aim, HS, winrate) |
+| `src/consejos.js` | Consejos semanales: punto flojo de cada jugador y qué practicar |
 | `src/ranking.js` | Arma el embed: tabla ordenada, colores de Premier y destacados |
 | `src/discord.js` | Cliente mínimo de la API de Discord |
 

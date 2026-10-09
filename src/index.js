@@ -77,6 +77,9 @@ export async function ejecutar({ cliente, pedir, canalVincular, canalRanking, cl
   return { registrados: registros.length, enRanking: jugadores.length };
 }
 
+export const crearPedir = () => (url, cabeceras = {}) =>
+  fetch(url, { headers: cabeceras, signal: AbortSignal.timeout(ESPERA_MAXIMA_MS) });
+
 export const idDeCanal = (valor) => /\d{17,20}/.exec(String(valor ?? ""))?.[0] ?? "";
 
 // ---------- Arranque (cuando se corre con `node src/index.js`) ----------
@@ -94,7 +97,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(1);
   }
 
-  const pedir = (url, cabeceras = {}) => fetch(url, { headers: cabeceras, signal: AbortSignal.timeout(ESPERA_MAXIMA_MS) });
+  const pedir = crearPedir();
   const resumen = await ejecutar({
     cliente: crearCliente(DISCORD_TOKEN),
     pedir,
