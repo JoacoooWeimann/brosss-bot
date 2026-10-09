@@ -1,10 +1,10 @@
-# Consejos personalizados en #tips, todos los lunes a las 12 (Argentina).
+# Consejos personalizados en #tips, todos los viernes a las 12 (Argentina).
 # También se puede correr a mano: Actions → Consejos semanales → Run workflow.
 name: Consejos semanales
 
 on:
   schedule:
-    - cron: "0 15 * * 1"
+    - cron: "0 15 * * 5"
   workflow_dispatch:
 
 permissions:

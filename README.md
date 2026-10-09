@@ -14,7 +14,7 @@ No necesita un servidor prendido: **GitHub Actions** lo corre cada 15 minutos, h
 Para salir del ranking, el jugador borra su mensaje. Si manda otro link, vale el más nuevo.
 
 ### Consejos semanales (#tips)
-Todos los **lunes a las 12** (hora de Argentina), el bot busca el punto más flojo de cada jugador de #vincular entre 12 áreas de Leetify (puntería, headshots, preaim, spray, counter-strafe, utilidad, flashes, tradeos…) y publica en **#tips** qué practicar, con un mapa de workshop y videos. Menciona a cada uno **sin notificar**.
+Todos los **viernes a las 12** (hora de Argentina), el bot busca el punto más flojo de cada jugador de #vincular entre 12 áreas de Leetify (puntería, headshots, preaim, spray, counter-strafe, utilidad, flashes, tradeos…) y publica en **#tips** qué practicar, con un mapa de workshop y videos. Menciona a cada uno **sin notificar**.
 
 Los objetivos de cada área están en `src/consejos.js` (`AREAS`): son valores de buen nivel aproximados, ajustalos si salen siempre los mismos consejos.
 
