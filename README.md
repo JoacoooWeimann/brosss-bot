@@ -31,7 +31,7 @@ DISBOARD deja bumpear cada 2 horas, y solo con `/bump` hecho por una persona: un
 
 ### 😂 Memes (#memes)
 - **Memes de Reddit:** de r/MemesEnEspanol y r/csgomemes (entre las 10 y las 2 de Argentina), el más votado que todavía no salió, sin NSFW ni spoilers. Usa [meme-api.com](https://meme-api.com) porque Reddit bloquea a los bots.
-  - `MEMES_SUBREDDITS`: de qué comunidades, separadas por coma (`MemesEnEspanol,csgomemes`).
+  - `MEMES_SUBREDDITS`: de qué comunidades, separadas por coma (`MemesEnEspanol,csgomemes`). Por defecto cada post necesita 30 votos; para una comunidad chica se puede bajar con `:votos`, por ejemplo `brainrot:3`.
   - `MEMES_CADA_MINUTOS`: cada cuánto (mínimo 15, por defecto 360 = 6 horas).
 - **Meme de la semana:** los viernes, con los consejos, gana el meme subido por un miembro en los últimos 7 días con más reacciones 😂 💀 🤣 (no cuentan las del autor ni las de bots, ni los memes de Reddit). El bot responde al meme ganador y, si está `ROL_MEME`, le pasa la medalla al nuevo ganador. Para eso el bot necesita el permiso **Gestionar roles** y estar más arriba que ese rol.
 

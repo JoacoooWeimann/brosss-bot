@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { publicadosAntes, tocaPublicar, elegirMeme, mensajeMeme, buscarMeme } from "../src/memes.js";
+import { publicadosAntes, tocaPublicar, elegirMeme, mensajeMeme, buscarMeme, leerSubreddit } from "../src/memes.js";
 import {
   esMeme, puntajeRapido, candidatos, contarValidas, anunciosPrevios, mensajeGanador, ejecutarMemeSemana,
 } from "../src/meme-semana.js";
@@ -46,6 +46,15 @@ test("elige el más votado apto: sin NSFW, spoilers, pocos votos, videos ni repe
   assert.equal(elegirMeme(lista, new Set()).postLink, "5");
   assert.equal(elegirMeme(lista, new Set(["5"])).postLink, "6");
   assert.equal(elegirMeme([], new Set()), null);
+});
+
+test("cada comunidad puede tener su mínimo de votos", async () => {
+  assert.deepEqual(leerSubreddit("brainrot:3"), { nombre: "brainrot", votos: 3 });
+  assert.deepEqual(leerSubreddit(" r/Argaming "), { nombre: "Argaming", votos: 30 });
+  assert.deepEqual(leerSubreddit("x:abc"), { nombre: "x", votos: 30 });
+  const pedir = async () => ({ ok: true, json: async () => ({ memes: [meme({ postLink: "chico", ups: 6 })] }) });
+  assert.equal(await buscarMeme(["brainrot"], new Set(), pedir), null);
+  assert.equal((await buscarMeme(["brainrot:5"], new Set(), pedir)).postLink, "chico");
 });
 
 test("si un subreddit no tiene nada nuevo, prueba el otro", async () => {

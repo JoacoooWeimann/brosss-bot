@@ -185,7 +185,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const ROL_BUMP = idDeCanal(process.env.ROL_BUMP); // opcional (sirve igual para IDs de rol)
   const CANAL_MEMES = idDeCanal(process.env.CANAL_MEMES); // opcional
   // Ej.: "MemesEnEspanol,csgomemes"
-  const SUBS = (process.env.MEMES_SUBREDDITS ?? "").split(",").map((x) => x.trim().replace(/^r\//i, "")).filter(Boolean);
+  const SUBS = (process.env.MEMES_SUBREDDITS ?? "").split(",").map((x) => x.trim()).filter(Boolean);
   // Mínimo 15 minutos: más seguido no se puede, el bot corre cada 15
   const minutos = Number(process.env.MEMES_CADA_MINUTOS);
   const MEMES_CADA = Number.isFinite(minutos) && minutos > 0 ? Math.max(15, minutos) * 60 * 1000 : undefined;

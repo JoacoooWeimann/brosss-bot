@@ -40,9 +40,17 @@ export function tocaPublicar({ ultimo, ahora, cada = CADA_MS }) {
 
 const esImagen = (url) => /^https:\/\/(i\.redd\.it|i\.imgur\.com)\/[\w-]+\.(png|jpe?g|gif|webp)$/i.test(String(url));
 
-export function elegirMeme(memes, links) {
+// "brainrot:5" → { nombre: "brainrot", votos: 5 }. Sin número, el mínimo normal.
+// Sirve para comunidades chicas, donde los posts tienen pocos votos.
+export function leerSubreddit(texto) {
+  const [nombre, votos] = String(texto).trim().replace(/^r\//i, "").split(":");
+  const n = Number(votos);
+  return { nombre, votos: Number.isInteger(n) && n >= 0 ? n : VOTOS_MINIMOS };
+}
+
+export function elegirMeme(memes, links, votosMinimos = VOTOS_MINIMOS) {
   const aptos = memes.filter(
-    (m) => !m.nsfw && !m.spoiler && (m.ups ?? 0) >= VOTOS_MINIMOS && esImagen(m.url) && !links.has(m.postLink)
+    (m) => !m.nsfw && !m.spoiler && (m.ups ?? 0) >= votosMinimos && esImagen(m.url) && !links.has(m.postLink)
   );
   // El más votado: el mejor de los que todavía no salieron
   return aptos.sort((a, b) => b.ups - a.ups)[0] ?? null;
@@ -74,8 +82,9 @@ export function mensajeMeme(meme) {
 // Prueba los subreddits en orden al azar hasta encontrar uno con algo nuevo
 export async function buscarMeme(subreddits, links, pedir, azar = Math.random) {
   const orden = [...subreddits].sort(() => azar() - 0.5);
-  for (const sub of orden) {
-    const meme = elegirMeme(await consultarMemes(sub, pedir), links);
+  for (const texto of orden) {
+    const { nombre, votos } = leerSubreddit(texto);
+    const meme = elegirMeme(await consultarMemes(nombre, pedir), links, votos);
     if (meme) return meme;
   }
   return null;
