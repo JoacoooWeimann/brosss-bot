@@ -12,8 +12,9 @@ concurrency:
   group: ranking
   cancel-in-progress: false
 
+# write: para guardar datos/historial.json (jugador de la semana)
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   actualizar:
@@ -31,3 +32,15 @@ jobs:
           LEETIFY_API_KEY: ${{ secrets.LEETIFY_API_KEY }}
           CANAL_VINCULAR: ${{ vars.CANAL_VINCULAR || secrets.CANAL_VINCULAR }}
           CANAL_RANKING: ${{ vars.CANAL_RANKING || secrets.CANAL_RANKING }}
+          CANAL_HISTORIAL: ${{ vars.CANAL_HISTORIAL || secrets.CANAL_HISTORIAL }}
+      # Si cambió el historial de la semana, lo guarda en el repo
+      - name: Guardar historial
+        run: |
+          if [ -n "$(git status --porcelain datos)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add datos
+            git commit -m "Historial de la semana"
+            git pull --rebase
+            git push
+          fi

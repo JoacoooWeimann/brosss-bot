@@ -149,7 +149,9 @@ test("vuelta completa: ✅ al que está, ❌ con explicación al que no, y nada 
     msg("30", "3", "76561190000000003"),
   ]);
   const r = await ejecutar({ cliente, pedir: pedirFalso, canalVincular: "vincular", canalRanking: "ranking" });
-  assert.deepEqual(r, { registrados: 3, enRanking: 1 });
+  assert.equal(r.registrados, 3);
+  assert.equal(r.enRanking, 1);
+  assert.deepEqual(Object.keys(r.historial.base), ["76561190000000001"]);
   assert.deepEqual(cliente.acciones, ["+✅ 10", "+❌ 20", "responde 20", "envia 🏆 RANKING CS2 · BROSSS"]);
 });
 

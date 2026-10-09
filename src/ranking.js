@@ -61,7 +61,15 @@ function destacados(jugadores) {
     .map(([nombre, j, valor]) => ({ name: nombre, value: `**${j.nombre.slice(0, 32)}** · ${valor(j)}`, inline: true }));
 }
 
-export function armarEmbed(jugadores, { canalVincular, ahora = Date.now() } = {}) {
+// "⭐ Jugador de la semana": el ganador de la pasada y quién va primero en esta
+export function campoSemana({ anterior, actual } = {}) {
+  const lineas = [];
+  if (anterior) lineas.push(`🏅 Semana pasada: **${anterior.nombre}** (+${miles(anterior.subio)})`);
+  lineas.push(actual ? `📈 Esta semana va primero: **${actual.nombre}** (+${miles(actual.subio)})` : "📈 Esta semana todavía nadie subió. ¡A jugar!");
+  return { name: "⭐ Jugador de la semana", value: lineas.join("\n"), inline: false };
+}
+
+export function armarEmbed(jugadores, { canalVincular, ahora = Date.now(), semana } = {}) {
   const lista = ordenar(jugadores).slice(0, MAXIMO);
   const unix = Math.floor(ahora / 1000);
   const comoEntrar = canalVincular ? `Para entrar, pegá tu link de Steam en <#${canalVincular}>.` : "";
@@ -75,7 +83,7 @@ export function armarEmbed(jugadores, { canalVincular, ahora = Date.now() } = {}
     description: `${cuerpo}\n${comoEntrar}\nActualizado <t:${unix}:R>`,
     color: VERDE,
     thumbnail: { url: ICONO },
-    fields: destacados(lista),
-    footer: { text: "Datos de Leetify · se actualiza solo cada 15 min", icon_url: ICONO },
+    fields: [...(semana ? [campoSemana(semana)] : []), ...destacados(lista)],
+    footer: { text: "Datos de Leetify · se actualiza solo cada 15 min · la semana arranca los viernes a las 12", icon_url: ICONO },
   };
 }

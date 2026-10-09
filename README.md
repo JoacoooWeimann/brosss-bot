@@ -13,6 +13,14 @@ No necesita un servidor prendido: **GitHub Actions** lo corre cada 15 minutos, h
 
 Para salir del ranking, el jugador borra su mensaje. Si manda otro link, vale el más nuevo.
 
+### ⭐ Jugador de la semana (#ranking)
+El ranking muestra quién **más subió de Premier** desde el viernes a las 12 y, cuando termina la semana, al ganador de la anterior. El Premier de cada uno al arrancar la semana se guarda en `datos/historial.json`, que el workflow commitea solo cuando cambia. Esos commits, además, evitan que GitHub pause las tareas programadas.
+
+### 📜 Historial de partidas (#historial)
+Cada partida que juegan los registrados aparece en **#historial**: victoria o derrota, mapa, modo, resultado y las stats de cada uno (K/D/A, ADR, HS y rating de Leetify). Si varios jugaron juntos, va un solo resumen con todos, y el de mejor rating lleva ⭐. El título lleva a la partida completa en Leetify.
+
+Solo publica partidas de las últimas 12 horas, y para no repetir mira lo que ya publicó en el canal. Es opcional: si no está `CANAL_HISTORIAL`, se saltea.
+
 ### Consejos semanales (#tips)
 Todos los **viernes a las 12** (hora de Argentina), el bot busca el punto más flojo de cada jugador de #vincular entre 12 áreas de Leetify (puntería, headshots, preaim, spray, counter-strafe, utilidad, flashes, tradeos…) y publica en **#tips** qué practicar, con un mapa de workshop y videos. Menciona a cada uno **sin notificar**.
 
@@ -48,6 +56,7 @@ En este repositorio → **Settings → Secrets and variables → Actions**:
 | Secrets | `LEETIFY_API_KEY` | *(opcional)* clave de Leetify, sube el límite de pedidos |
 | Variables (o Secrets) | `CANAL_VINCULAR` | ID de #vincular |
 | Variables (o Secrets) | `CANAL_RANKING` | ID de #ranking |
+| Variables (o Secrets) | `CANAL_HISTORIAL` | ID de #historial (para los resúmenes de partidas) |
 | Variables (o Secrets) | `CANAL_TIPS` | ID de #tips (para los consejos) |
 
 ### 4. Probarlo
@@ -68,6 +77,8 @@ No hace falta `npm install`: no tiene dependencias (usa `fetch` y `node:test`, q
 | `src/steam.js` | Entiende el link de Steam y lo pasa a ID de 64 bits |
 | `src/leetify.js` | Consulta Leetify (Premier, FACEIT, aim, HS, winrate) |
 | `src/consejos.js` | Consejos semanales: punto flojo de cada jugador y qué practicar |
+| `src/semana.js` | Jugador de la semana: historial del Premier desde el viernes |
+| `src/partidas.js` | Resúmenes de partidas para #historial |
 | `src/ranking.js` | Arma el embed: tabla ordenada, colores de Premier y destacados |
 | `src/discord.js` | Cliente mínimo de la API de Discord |
 
