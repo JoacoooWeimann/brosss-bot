@@ -1,10 +1,12 @@
 // =============================================================
-//  BROSSS BOT · Ranking CS2
-//  Una vuelta completa (GitHub Actions lo corre cada 15 min):
+//  BROSSS BOT
+//  Una vuelta completa (corre cada 15 min):
 //   1. Lee #vincular y arma la lista de jugadores.
 //   2. Busca a cada uno en Steam y Leetify.
 //   3. Le reacciona ✅ o ❌ (y le explica qué falta, una sola vez).
 //   4. Edita el mensaje del ranking en #ranking (o lo crea).
+//   5. Lo opcional, cada parte por su lado (si una falla, sigue):
+//      #historial, #clips, #bumpeador, #memes, #streams y #redes.
 // =============================================================
 
 import { fileURLToPath } from "node:url";
@@ -18,6 +20,9 @@ import { consultarPartidas, agrupar, embedPartida, yaPublicadas } from "./partid
 import { consultarTiktok, videosNuevos, mensajeVideo } from "./tiktok.js";
 import { revisarBump, mensajeBump } from "./bump.js";
 import { publicadosAntes, tocaPublicar, buscarMeme, mensajeMeme, SUBREDDITS } from "./memes.js";
+import { cargarConfigWeb, juntarStreamers, consultarCanal } from "./kick.js";
+import { alertasPrevias, revisarStreams, mensajeEnVivo, embedTerminado } from "./streams.js";
+import { embedRedes, hayCambios, TITULO as TITULO_REDES } from "./redes.js";
 
 const ESPERA_MAXIMA_MS = 8000;
 const EN_PARALELO = 4; // para no saturar a Leetify
@@ -77,14 +82,25 @@ async function publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, 
   }
 }
 
+// Los últimos videos de TikTok (para #clips y #redes). Si falla, null.
+async function videosTiktok(usuario, pedir) {
+  try {
+    return await consultarTiktok(usuario, pedir);
+  } catch (error) {
+    console.warn(`Clips: ${error.message}`);
+    return null;
+  }
+}
+
 // Publica en #clips los videos nuevos de la cuenta de TikTok.
 // Igual que el historial: si falla, el ranking sigue.
-async function publicarClips({ cliente, pedir, canalClips, usuarioTiktok, botId, ahora }) {
+async function publicarClips({ cliente, canalClips, usuarioTiktok, videos, botId, ahora }) {
+  if (!videos) return 0;
   try {
     const publicados = new Set(
       (await cliente.mensajes(canalClips, 100)).filter((m) => m.author?.id === botId).map((m) => m.content ?? "")
     );
-    const nuevos = videosNuevos(await consultarTiktok(usuarioTiktok, pedir), { ahora, publicados });
+    const nuevos = videosNuevos(videos, { ahora, publicados });
     for (const v of nuevos) await cliente.enviar(canalClips, mensajeVideo(usuarioTiktok, v));
     return nuevos.length;
   } catch (error) {
@@ -136,8 +152,59 @@ async function publicarMeme({ cliente, pedir, canalMemes, subreddits, memesCada,
   }
 }
 
+// Kick: alertas en #streams y la tarjeta de #redes
+async function streamsYRedes({ cliente, pedir, canalStreams, canalRedes, rolStream, kickExtra, usuarioTiktok, videos, botId, ahora }) {
+  let configWeb = {};
+  try {
+    configWeb = await cargarConfigWeb(pedir);
+  } catch (error) {
+    console.warn(`Streams: no pude leer la lista de la página (${error.message}), uso solo KICK_EXTRA.`);
+  }
+  const streamers = juntarStreamers(configWeb.streamers, kickExtra);
+  const estados = await enTandas(streamers, EN_PARALELO, async (streamer) => {
+    try {
+      return { streamer, canal: await consultarCanal(streamer.slug) };
+    } catch (error) {
+      console.warn(`Streams: ${error.message}`);
+      return { streamer, canal: null };
+    }
+  });
+
+  let alertas = 0;
+  if (canalStreams) {
+    try {
+      const previas = alertasPrevias(await cliente.mensajes(canalStreams, 100), botId);
+      const { nuevas, cerrar } = revisarStreams(estados, previas);
+      for (const { streamer, canal } of nuevas) await cliente.enviar(canalStreams, mensajeEnVivo(streamer, canal, rolStream));
+      for (const a of cerrar) await cliente.editar(canalStreams, a.mensaje.id, { embeds: [embedTerminado(a, ahora)] });
+      alertas = nuevas.length;
+    } catch (error) {
+      console.warn(`Streams: ${error.message}`);
+    }
+  }
+
+  if (canalRedes) {
+    try {
+      const embed = embedRedes({
+        streamers: estados,
+        tiktok: { usuario: usuarioTiktok, videos: videos ?? [] },
+        invitacion: configWeb.codigoInvitacion,
+      });
+      const propio = (await cliente.mensajes(canalRedes, 50)).find(
+        (m) => m.author?.id === botId && m.embeds?.[0]?.title === TITULO_REDES
+      );
+      if (!propio) await cliente.enviar(canalRedes, { embeds: [embed], allowed_mentions: { parse: [] } });
+      else if (hayCambios(propio, embed)) await cliente.editar(canalRedes, propio.id, { embeds: [embed] });
+    } catch (error) {
+      console.warn(`Redes: ${error.message}`);
+    }
+  }
+  return alertas;
+}
+
 export async function ejecutar({
   cliente, pedir, canalVincular, canalRanking, canalHistorial, canalClips, usuarioTiktok = "brosss.clips", canalBump, rolBump, canalMemes, subreddits = SUBREDDITS, memesCada, memesForzar = false,
+  canalStreams, canalRedes, rolStream, kickExtra = "",
   claveLeetify, historial = null, ahora = Date.now(),
 }) {
   const registros = registrosDesdeMensajes(await cliente.mensajes(canalVincular));
@@ -170,13 +237,19 @@ export async function ejecutar({
     ? await publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, jugadores, botId: yo.id, ahora })
     : 0;
 
-  const clips = canalClips ? await publicarClips({ cliente, pedir, canalClips, usuarioTiktok, botId: yo.id, ahora }) : 0;
+  const videos = canalClips || canalRedes ? await videosTiktok(usuarioTiktok, pedir) : null;
+  const clips = canalClips ? await publicarClips({ cliente, canalClips, usuarioTiktok, videos, botId: yo.id, ahora }) : 0;
 
   const bump = canalBump ? await recordarBump({ cliente, canalBump, rolBump, botId: yo.id, ahora }) : false;
 
   const meme = canalMemes ? await publicarMeme({ cliente, pedir, canalMemes, subreddits, memesCada, memesForzar, botId: yo.id, ahora }) : false;
 
-  return { registrados: registros.length, enRanking: jugadores.length, partidas, clips, bump, meme, historial: historialNuevo };
+  const streams =
+    canalStreams || canalRedes
+      ? await streamsYRedes({ cliente, pedir, canalStreams, canalRedes, rolStream, kickExtra, usuarioTiktok, videos, botId: yo.id, ahora })
+      : 0;
+
+  return { registrados: registros.length, enRanking: jugadores.length, partidas, clips, bump, meme, streams, historial: historialNuevo };
 }
 
 export const crearPedir = () => (url, cabeceras = {}) =>
@@ -196,6 +269,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const CANAL_BUMP = idDeCanal(process.env.CANAL_BUMP); // opcional
   const ROL_BUMP = idDeCanal(process.env.ROL_BUMP); // opcional (sirve igual para IDs de rol)
   const CANAL_MEMES = idDeCanal(process.env.CANAL_MEMES); // opcional
+  const CANAL_STREAMS = idDeCanal(process.env.CANAL_STREAMS); // opcional
+  const CANAL_REDES = idDeCanal(process.env.CANAL_REDES); // opcional
+  const ROL_STREAM = idDeCanal(process.env.ROL_STREAM); // opcional
   // Ej.: "MemesEnEspanol,csgomemes"
   const SUBS = (process.env.MEMES_SUBREDDITS ?? "").split(",").map((x) => x.trim()).filter(Boolean);
   // Mínimo 15 minutos: más seguido no se puede, el bot corre cada 15
@@ -225,12 +301,16 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     subreddits: SUBS.length ? SUBS : undefined,
     memesCada: MEMES_CADA,
     memesForzar: process.env.MEMES_FORZAR === "true",
+    canalStreams: CANAL_STREAMS,
+    canalRedes: CANAL_REDES,
+    rolStream: ROL_STREAM,
+    kickExtra: process.env.KICK_EXTRA ?? "",
     claveLeetify: LEETIFY_API_KEY,
     historial,
   });
   const cambio = await semana.guardar(resumen.historial, historial);
   console.log(
     `Listo: ${resumen.enRanking} de ${resumen.registrados} jugadores en el ranking, ` +
-      `${resumen.partidas} partidas nuevas en el historial, ${resumen.clips} clips nuevos${resumen.bump ? ", recordatorio de bump enviado" : ""}${resumen.meme ? ", meme publicado" : ""}${cambio ? ", historial de la semana actualizado" : ""}.`
+      `${resumen.partidas} partidas nuevas en el historial, ${resumen.clips} clips nuevos${resumen.bump ? ", recordatorio de bump enviado" : ""}${resumen.meme ? ", meme publicado" : ""}${resumen.streams ? `, ${resumen.streams} alertas de stream` : ""}${cambio ? ", historial de la semana actualizado" : ""}.`
   );
 }

@@ -36,6 +36,12 @@ DISBOARD deja bumpear cada 2 horas, y solo con `/bump` hecho por una persona: un
   - Para probar: **Actions → Ranking CS2 → Run workflow** y tildar *Publicar memes ahora*: sale uno de cada comunidad en el momento.
 - **Meme de la semana:** los viernes, con los consejos, gana el meme subido por un miembro en los últimos 7 días con más reacciones 😂 💀 🤣 (no cuentan las del autor ni las de bots, ni los memes de Reddit). El bot responde al meme ganador y, si está `ROL_MEME`, le pasa la medalla al nuevo ganador. Para eso el bot necesita el permiso **Gestionar roles** y estar más arriba que ese rol.
 
+### 🔴 Streams de Kick (#streams) y 📱 redes (#redes)
+- **Quiénes:** los streamers de la sección Stream de la página (`js/config.js`), más los que agregues en la variable `KICK_EXTRA`, separados por coma (`canal1,canal2` o links de Kick). Si cambia la lista de la página, el bot la toma sola.
+- **#streams:** cuando alguien prende, una alerta con el título, la categoría y el link (mencionando `ROL_STREAM`, si está). Una sola por stream. Cuando termina, la misma alerta pasa a "⚫ terminó · duró 2 h 15 min".
+- **#redes:** un mensaje con la página, el TikTok (con el último clip), los canales de Kick (con quién está en vivo) y la invitación. El bot lo edita solo cuando algo cambia.
+- Kick está detrás de Cloudflare, que bloquea el `fetch` de Node: por eso se consulta con `curl`.
+
 ### Consejos semanales (#tips)
 Todos los **viernes a las 12** (hora de Argentina), el bot busca el punto más flojo de cada jugador de #vincular entre 12 áreas de Leetify (puntería, headshots, preaim, spray, counter-strafe, utilidad, flashes, tradeos…) y publica en **#tips** qué practicar, con un mapa de workshop y videos. Menciona a cada uno **sin notificar**.
 
@@ -77,6 +83,10 @@ En este repositorio → **Settings → Secrets and variables → Actions**:
 | Variables (o Secrets) | `ROL_BUMP` | *(opcional)* ID del rol al que avisa |
 | Variables (o Secrets) | `CANAL_MEMES` | ID de #memes (Reddit y meme de la semana) |
 | Variables (o Secrets) | `ROL_MEME` | *(opcional)* ID del rol 『🤣』Momero de la semana |
+| Variables (o Secrets) | `CANAL_STREAMS` | ID de #streams (alertas de Kick) |
+| Variables (o Secrets) | `CANAL_REDES` | ID de #redes |
+| Variables (o Secrets) | `ROL_STREAM` | *(opcional)* ID del rol al que avisan las alertas |
+| Variables | `KICK_EXTRA` | *(opcional)* canales de Kick además de los de la página |
 | Variables (o Secrets) | `CANAL_TIPS` | ID de #tips (para los consejos) |
 
 ### 4. Probarlo
@@ -103,6 +113,9 @@ No hace falta `npm install`: no tiene dependencias (usa `fetch` y `node:test`, q
 | `src/bump.js` | Recordatorio de bump de DISBOARD |
 | `src/memes.js` | Memes de Reddit para #memes |
 | `src/meme-semana.js` | Meme de la semana y su medalla |
+| `src/kick.js` | Lista de streamers (página + `KICK_EXTRA`) y estado en Kick |
+| `src/streams.js` | Alertas de stream para #streams |
+| `src/redes.js` | La tarjeta de #redes |
 | `src/ranking.js` | Arma el embed: tabla ordenada, colores de Premier y destacados |
 | `src/discord.js` | Cliente mínimo de la API de Discord |
 

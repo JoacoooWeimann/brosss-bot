@@ -46,6 +46,10 @@ jobs:
           MEMES_SUBREDDITS: ${{ vars.MEMES_SUBREDDITS }}
           MEMES_CADA_MINUTOS: ${{ vars.MEMES_CADA_MINUTOS }}
           MEMES_FORZAR: ${{ inputs.memes_ahora }}
+          CANAL_STREAMS: ${{ vars.CANAL_STREAMS || secrets.CANAL_STREAMS }}
+          CANAL_REDES: ${{ vars.CANAL_REDES || secrets.CANAL_REDES }}
+          ROL_STREAM: ${{ vars.ROL_STREAM || secrets.ROL_STREAM }}
+          KICK_EXTRA: ${{ vars.KICK_EXTRA }}
       # Si cambió el historial de la semana, lo guarda en el repo
       - name: Guardar historial
         run: |

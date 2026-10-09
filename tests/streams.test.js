@@ -1,0 +1,116 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { slugDeKick, leerConfigWeb, juntarStreamers, resumirCanal, duracion } from "../src/kick.js";
+import { alertasPrevias, revisarStreams, mensajeEnVivo, embedTerminado } from "../src/streams.js";
+import { embedRedes, hayCambios } from "../src/redes.js";
+
+// ---------- Kick ----------
+
+test("entiende el canal de Kick en cualquier formato", () => {
+  assert.equal(slugDeKick("ibrandou"), "ibrandou");
+  assert.equal(slugDeKick("https://kick.com/iBranDou?ref=x"), "ibrandou");
+  assert.equal(slugDeKick(" kick.com/ikyooo/ "), "ikyooo");
+  assert.equal(slugDeKick(""), null);
+  assert.equal(slugDeKick("con espacios"), null);
+});
+
+test("lee la lista de streamers del config.js de la página, aislado", () => {
+  const codigo = `const CONFIG = { codigoInvitacion: "abc", streamers: [{ nombre: "Joacooo", kick: "joacooow" }] };
+if (typeof module !== "undefined") module.exports = CONFIG;`;
+  const c = leerConfigWeb(codigo);
+  assert.equal(c.codigoInvitacion, "abc");
+  assert.equal(c.streamers[0].kick, "joacooow");
+  // No tiene acceso a nada de Node
+  assert.throws(() => leerConfigWeb("process.exit(1)"));
+  assert.throws(() => leerConfigWeb("while (true) {}"));
+});
+
+test("junta los de la página con los de KICK_EXTRA, sin repetir", () => {
+  const lista = juntarStreamers([{ nombre: "Joacooo", kick: "joacooow" }, { nombre: "Kyo", kick: "ikyooo" }], "nuevo, kick.com/IKYOOO ,, x y");
+  assert.deepEqual(lista, [
+    { nombre: "Joacooo", slug: "joacooow" },
+    { nombre: "Kyo", slug: "ikyooo" },
+    { nombre: null, slug: "nuevo" },
+  ]);
+  assert.deepEqual(juntarStreamers(undefined, ""), []);
+});
+
+test("resume la respuesta de Kick como la página", () => {
+  const c = resumirCanal({
+    slug: "ibrandou", user: { username: "iBranDou", profile_pic: "https://x/p.png" },
+    livestream: { id: 77, is_live: true, session_title: "Rankeds", viewer_count: 12, start_time: "2026-10-09 20:00:00",
+      categories: [{ name: "Counter-Strike 2" }], thumbnail: { url: "https://x/t.jpg" } },
+  });
+  assert.equal(c.enVivo, true);
+  assert.equal(c.sesion, "77");
+  assert.equal(c.categoria, "Counter-Strike 2");
+  assert.equal(c.inicio, Date.parse("2026-10-09T20:00:00Z"));
+  assert.equal(resumirCanal({ slug: "x", livestream: null }).enVivo, false);
+  assert.equal(duracion(0, 135 * 60e3), "2 h 15 min");
+  assert.equal(duracion(0, 45 * 60e3), "45 min");
+});
+
+// ---------- Alertas ----------
+
+const ibran = { nombre: "iBranDou", slug: "ibrandou" };
+const enVivo = (sesion) => ({ nombre: "iBranDou", enVivo: true, sesion, titulo: "Rankeds", categoria: "CS2", inicio: Date.parse("2026-10-09T20:00:00Z"), avatar: "", miniatura: "" });
+const offline = { nombre: "iBranDou", enVivo: false, sesion: null };
+const alertaDe = (sesion, rolId) => ({ id: `m${sesion}`, author: { id: "bot" }, embeds: mensajeEnVivo(ibran, enVivo(sesion), rolId).embeds });
+
+test("avisa una sola vez por stream", () => {
+  assert.equal(revisarStreams([{ streamer: ibran, canal: enVivo("1") }], []).nuevas.length, 1);
+  const previas = alertasPrevias([alertaDe("1")], "bot");
+  assert.deepEqual(revisarStreams([{ streamer: ibran, canal: enVivo("1") }], previas), { nuevas: [], cerrar: [] });
+  // Un stream nuevo (otra sesión) sí avisa, y cierra el anterior
+  const r = revisarStreams([{ streamer: ibran, canal: enVivo("2") }], previas);
+  assert.equal(r.nuevas.length, 1);
+  assert.equal(r.cerrar.length, 1);
+});
+
+test("cuando termina, cierra la alerta; si Kick no responde, no toca nada", () => {
+  const previas = alertasPrevias([alertaDe("1")], "bot");
+  assert.equal(revisarStreams([{ streamer: ibran, canal: offline }], previas).cerrar.length, 1);
+  assert.deepEqual(revisarStreams([{ streamer: ibran, canal: null }], previas), { nuevas: [], cerrar: [] });
+});
+
+test("la alerta: título, link, categoría, sesión y solo el rol de streams", () => {
+  const m = mensajeEnVivo(ibran, enVivo("9"), "555");
+  assert.match(m.content, /iBranDou.*prendió.*<@&555>/);
+  assert.equal(m.embeds[0].title, "🔴 iBranDou está en vivo en Kick");
+  assert.equal(m.embeds[0].url, "https://kick.com/ibrandou");
+  assert.match(m.embeds[0].description, /\*\*Rankeds\*\*\nCS2\n👉 https:\/\/kick\.com\/ibrandou/);
+  assert.equal(m.embeds[0].footer.text, "Kick · sesión 9");
+  assert.deepEqual(m.allowed_mentions, { parse: [], roles: ["555"] });
+});
+
+test("la alerta terminada dice cuánto duró y ya no cuenta como abierta", () => {
+  const [a] = alertasPrevias([alertaDe("1")], "bot");
+  const e = embedTerminado(a, Date.parse("2026-10-09T22:15:00Z"));
+  assert.equal(e.title, "⚫ iBranDou terminó el stream");
+  assert.match(e.description, /\*\*Rankeds\*\*\nDuró 2 h 15 min/);
+  const cerrada = alertasPrevias([{ id: "m1", author: { id: "bot" }, embeds: [e] }], "bot");
+  assert.equal(cerrada[0].terminada, true);
+});
+
+// ---------- #redes ----------
+
+test("la tarjeta de redes: página, TikTok, Kick con el que está en vivo primero, e invitación", () => {
+  const e = embedRedes({
+    streamers: [
+      { streamer: { nombre: "Joacooo", slug: "joacooow" }, canal: { enVivo: false } },
+      { streamer: ibran, canal: { ...enVivo("1"), espectadores: 12 } },
+      { streamer: { nombre: null, slug: "nuevo" }, canal: null },
+    ],
+    tiktok: { usuario: "brosss.clips", videos: [{ id: "123", titulo: "tomatomatoma" }] },
+    invitacion: "th8xGPTBDX",
+  });
+  const d = e.description;
+  assert.match(d, /Página.*brosssdiscord\.netlify\.app/);
+  assert.match(d, /TikTok:\*\* \[@brosss\.clips\].*último clip: \[tomatomatoma\]\(https:\/\/www\.tiktok\.com\/@brosss\.clips\/video\/123\)/);
+  assert.ok(d.indexOf("iBranDou") < d.indexOf("Joacooo"));
+  assert.match(d, /🔴 \[iBranDou\].*en vivo.*Rankeds.*12 👀/);
+  assert.match(d, /▫️ \[nuevo\]\(https:\/\/kick\.com\/nuevo\)/); // Kick no respondió: no dice "offline"
+  assert.match(d, /discord\.gg\/th8xGPTBDX/);
+  assert.equal(hayCambios({ embeds: [{ description: d }] }, e), false);
+  assert.equal(hayCambios(null, e), true);
+});
