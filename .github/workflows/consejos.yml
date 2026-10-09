@@ -1,6 +1,6 @@
-# Consejos personalizados en #tips, todos los viernes a las 12 (Argentina).
+# Los viernes a las 12 (Argentina): consejos en #tips y meme de la semana en #memes.
 # También se puede correr a mano: Actions → Consejos semanales → Run workflow.
-name: Consejos semanales
+name: Consejos y meme de la semana
 
 on:
   schedule:
@@ -26,3 +26,10 @@ jobs:
           LEETIFY_API_KEY: ${{ secrets.LEETIFY_API_KEY }}
           CANAL_VINCULAR: ${{ vars.CANAL_VINCULAR || secrets.CANAL_VINCULAR }}
           CANAL_TIPS: ${{ vars.CANAL_TIPS || secrets.CANAL_TIPS }}
+      # Aunque fallen los consejos, el meme de la semana sale igual
+      - run: node src/meme-semana.js
+        if: success() || failure()
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          CANAL_MEMES: ${{ vars.CANAL_MEMES || secrets.CANAL_MEMES }}
+          ROL_MEME: ${{ vars.ROL_MEME || secrets.ROL_MEME }}

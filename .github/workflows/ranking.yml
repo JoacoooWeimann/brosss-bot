@@ -37,6 +37,8 @@ jobs:
           TIKTOK_USUARIO: ${{ vars.TIKTOK_USUARIO }}
           CANAL_BUMP: ${{ vars.CANAL_BUMP || secrets.CANAL_BUMP }}
           ROL_BUMP: ${{ vars.ROL_BUMP || secrets.ROL_BUMP }}
+          CANAL_MEMES: ${{ vars.CANAL_MEMES || secrets.CANAL_MEMES }}
+          MEMES_SUBREDDITS: ${{ vars.MEMES_SUBREDDITS }}
       # Si cambió el historial de la semana, lo guarda en el repo
       - name: Guardar historial
         run: |

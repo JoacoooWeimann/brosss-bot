@@ -29,6 +29,10 @@ TikTok no tiene API pública: el bot lee la página de "embed de creador". Si Ti
 ### ⏰ Recordatorio de bump (#bumpeador)
 DISBOARD deja bumpear cada 2 horas, y solo con `/bump` hecho por una persona: un bot no puede, y automatizarlo con una cuenta personal va contra las reglas de Discord y DISBOARD. El bot lee el último bump en el canal y, cuando pasan las 2 horas, avisa una sola vez (mencionando el rol de `ROL_BUMP`, si está). Cuando alguien bumpea, borra el aviso viejo. Como corre cada 15 minutos, el aviso puede llegar hasta 15 minutos tarde.
 
+### 😂 Memes (#memes)
+- **Memes de Reddit:** uno cada 6 horas (entre las 10 y las 2 de Argentina) de r/MemesEnEspanol y r/csgomemes, el más votado que todavía no salió, sin NSFW ni spoilers. Usa [meme-api.com](https://meme-api.com) porque Reddit bloquea a los bots. Para cambiar los subreddits: variable `MEMES_SUBREDDITS` (separados por coma).
+- **Meme de la semana:** los viernes, con los consejos, gana el meme subido por un miembro en los últimos 7 días con más reacciones 😂 💀 🤣 (no cuentan las del autor ni las de bots, ni los memes de Reddit). El bot responde al meme ganador y, si está `ROL_MEME`, le pasa la medalla al nuevo ganador. Para eso el bot necesita el permiso **Gestionar roles** y estar más arriba que ese rol.
+
 ### Consejos semanales (#tips)
 Todos los **viernes a las 12** (hora de Argentina), el bot busca el punto más flojo de cada jugador de #vincular entre 12 áreas de Leetify (puntería, headshots, preaim, spray, counter-strafe, utilidad, flashes, tradeos…) y publica en **#tips** qué practicar, con un mapa de workshop y videos. Menciona a cada uno **sin notificar**.
 
@@ -68,6 +72,8 @@ En este repositorio → **Settings → Secrets and variables → Actions**:
 | Variables (o Secrets) | `CANAL_CLIPS` | ID de #clips (para los videos de TikTok) |
 | Variables (o Secrets) | `CANAL_BUMP` | ID de #bumpeador (para el recordatorio) |
 | Variables (o Secrets) | `ROL_BUMP` | *(opcional)* ID del rol al que avisa |
+| Variables (o Secrets) | `CANAL_MEMES` | ID de #memes (Reddit y meme de la semana) |
+| Variables (o Secrets) | `ROL_MEME` | *(opcional)* ID del rol 『🤣』Memero de la semana |
 | Variables (o Secrets) | `CANAL_TIPS` | ID de #tips (para los consejos) |
 
 ### 4. Probarlo
@@ -92,6 +98,8 @@ No hace falta `npm install`: no tiene dependencias (usa `fetch` y `node:test`, q
 | `src/partidas.js` | Resúmenes de partidas para #historial |
 | `src/tiktok.js` | Videos nuevos de TikTok para #clips |
 | `src/bump.js` | Recordatorio de bump de DISBOARD |
+| `src/memes.js` | Memes de Reddit para #memes |
+| `src/meme-semana.js` | Meme de la semana y su medalla |
 | `src/ranking.js` | Arma el embed: tabla ordenada, colores de Premier y destacados |
 | `src/discord.js` | Cliente mínimo de la API de Discord |
 

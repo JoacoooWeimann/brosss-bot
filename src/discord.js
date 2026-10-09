@@ -45,6 +45,12 @@ export function crearCliente(token, fetchFn = fetch) {
       return todos;
     },
 
+    // Quiénes reaccionaron con un emoji (hasta 100)
+    reacciones: (canal, mensaje, e) => pedir("GET", `/channels/${canal}/messages/${mensaje}/reactions/${emoji(e)}?limit=100`),
+    canal: (canal) => pedir("GET", `/channels/${canal}`),
+    ponerRol: (servidor, usuario, rol) => pedir("PUT", `/guilds/${servidor}/members/${usuario}/roles/${rol}`),
+    sacarRol: (servidor, usuario, rol) => pedir("DELETE", `/guilds/${servidor}/members/${usuario}/roles/${rol}`),
+
     reaccionar: (canal, mensaje, e) => pedir("PUT", `/channels/${canal}/messages/${mensaje}/reactions/${emoji(e)}/@me`),
     sacarReaccion: (canal, mensaje, e) => pedir("DELETE", `/channels/${canal}/messages/${mensaje}/reactions/${emoji(e)}/@me`),
 

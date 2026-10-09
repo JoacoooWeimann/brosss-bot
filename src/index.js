@@ -17,6 +17,7 @@ import * as semana from "./semana.js";
 import { consultarPartidas, agrupar, embedPartida, yaPublicadas } from "./partidas.js";
 import { consultarTiktok, videosNuevos, mensajeVideo } from "./tiktok.js";
 import { revisarBump, mensajeBump } from "./bump.js";
+import { publicadosAntes, tocaPublicar, buscarMeme, mensajeMeme, SUBREDDITS } from "./memes.js";
 
 const ESPERA_MAXIMA_MS = 8000;
 const EN_PARALELO = 4; // para no saturar a Leetify
@@ -107,8 +108,23 @@ async function recordarBump({ cliente, canalBump, rolBump, botId, ahora }) {
   }
 }
 
+// Un meme de Reddit en #memes cada 6 horas
+async function publicarMeme({ cliente, pedir, canalMemes, subreddits, botId, ahora }) {
+  try {
+    const { links, ultimo } = publicadosAntes(await cliente.mensajes(canalMemes, 100), botId);
+    if (!tocaPublicar({ ultimo, ahora })) return false;
+    const meme = await buscarMeme(subreddits, links, pedir);
+    if (!meme) return false;
+    await cliente.enviar(canalMemes, mensajeMeme(meme));
+    return true;
+  } catch (error) {
+    console.warn(`Memes: ${error.message}`);
+    return false;
+  }
+}
+
 export async function ejecutar({
-  cliente, pedir, canalVincular, canalRanking, canalHistorial, canalClips, usuarioTiktok = "brosss.clips", canalBump, rolBump,
+  cliente, pedir, canalVincular, canalRanking, canalHistorial, canalClips, usuarioTiktok = "brosss.clips", canalBump, rolBump, canalMemes, subreddits = SUBREDDITS,
   claveLeetify, historial = null, ahora = Date.now(),
 }) {
   const registros = registrosDesdeMensajes(await cliente.mensajes(canalVincular));
@@ -145,7 +161,9 @@ export async function ejecutar({
 
   const bump = canalBump ? await recordarBump({ cliente, canalBump, rolBump, botId: yo.id, ahora }) : false;
 
-  return { registrados: registros.length, enRanking: jugadores.length, partidas, clips, bump, historial: historialNuevo };
+  const meme = canalMemes ? await publicarMeme({ cliente, pedir, canalMemes, subreddits, botId: yo.id, ahora }) : false;
+
+  return { registrados: registros.length, enRanking: jugadores.length, partidas, clips, bump, meme, historial: historialNuevo };
 }
 
 export const crearPedir = () => (url, cabeceras = {}) =>
@@ -164,6 +182,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const CANAL_CLIPS = idDeCanal(process.env.CANAL_CLIPS); // opcional
   const CANAL_BUMP = idDeCanal(process.env.CANAL_BUMP); // opcional
   const ROL_BUMP = idDeCanal(process.env.ROL_BUMP); // opcional (sirve igual para IDs de rol)
+  const CANAL_MEMES = idDeCanal(process.env.CANAL_MEMES); // opcional
+  // Ej.: "MemesEnEspanol,csgomemes"
+  const SUBS = (process.env.MEMES_SUBREDDITS ?? "").split(",").map((x) => x.trim()).filter(Boolean);
   const faltan = Object.entries({ DISCORD_TOKEN, CANAL_VINCULAR, CANAL_RANKING })
     .filter(([, v]) => !v)
     .map(([k]) => k);
@@ -184,12 +205,14 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     usuarioTiktok: process.env.TIKTOK_USUARIO || undefined,
     canalBump: CANAL_BUMP,
     rolBump: ROL_BUMP,
+    canalMemes: CANAL_MEMES,
+    subreddits: SUBS.length ? SUBS : undefined,
     claveLeetify: LEETIFY_API_KEY,
     historial,
   });
   const cambio = await semana.guardar(resumen.historial, historial);
   console.log(
     `Listo: ${resumen.enRanking} de ${resumen.registrados} jugadores en el ranking, ` +
-      `${resumen.partidas} partidas nuevas en el historial, ${resumen.clips} clips nuevos${resumen.bump ? ", recordatorio de bump enviado" : ""}${cambio ? ", historial de la semana actualizado" : ""}.`
+      `${resumen.partidas} partidas nuevas en el historial, ${resumen.clips} clips nuevos${resumen.bump ? ", recordatorio de bump enviado" : ""}${resumen.meme ? ", meme publicado" : ""}${cambio ? ", historial de la semana actualizado" : ""}.`
   );
 }
