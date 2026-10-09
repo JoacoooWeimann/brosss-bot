@@ -77,10 +77,15 @@ export async function ejecutar({ cliente, pedir, canalVincular, canalRanking, cl
   return { registrados: registros.length, enRanking: jugadores.length };
 }
 
+export const idDeCanal = (valor) => /\d{17,20}/.exec(String(valor ?? ""))?.[0] ?? "";
+
 // ---------- Arranque (cuando se corre con `node src/index.js`) ----------
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { DISCORD_TOKEN, CANAL_VINCULAR, CANAL_RANKING, LEETIFY_API_KEY } = process.env;
+  const { DISCORD_TOKEN, LEETIFY_API_KEY } = process.env;
+  // Acepta el ID solo o como mención (<#123...>), con espacios de más
+  const CANAL_VINCULAR = idDeCanal(process.env.CANAL_VINCULAR);
+  const CANAL_RANKING = idDeCanal(process.env.CANAL_RANKING);
   const faltan = Object.entries({ DISCORD_TOKEN, CANAL_VINCULAR, CANAL_RANKING })
     .filter(([, v]) => !v)
     .map(([k]) => k);

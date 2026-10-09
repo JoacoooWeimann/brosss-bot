@@ -4,7 +4,7 @@ import { parsearSteam, leerSteamId } from "../src/steam.js";
 import { leerPerfil, consultarLeetify } from "../src/leetify.js";
 import { registrosDesdeMensajes } from "../src/vincular.js";
 import { ordenar, colorPremier, filaTabla, armarEmbed } from "../src/ranking.js";
-import { ejecutar } from "../src/index.js";
+import { ejecutar, idDeCanal } from "../src/index.js";
 
 // ---------- Steam ----------
 
@@ -160,4 +160,11 @@ test("no repite reacciones ni respuestas, corrige el ❌ cuando se arregla y edi
   );
   await ejecutar({ cliente, pedir: pedirFalso, canalVincular: "vincular", canalRanking: "ranking" });
   assert.deepEqual(cliente.acciones, ["-❌ 10", "+✅ 10", "edita 99"]);
+});
+
+test("el ID del canal sirve solo, como mención o con espacios", () => {
+  assert.equal(idDeCanal("1234567890123456789"), "1234567890123456789");
+  assert.equal(idDeCanal(" <#1234567890123456789> "), "1234567890123456789");
+  assert.equal(idDeCanal("#ranking"), "");
+  assert.equal(idDeCanal(undefined), "");
 });
