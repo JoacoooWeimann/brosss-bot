@@ -26,6 +26,9 @@ Cada 15 minutos revisa la cuenta **@brosss.clips** y publica en **#clips** los v
 
 TikTok no tiene API pública: el bot lee la página de "embed de creador". Si TikTok la cambia o la bloquea, el ranking sigue andando y el log de Actions muestra `Clips: …`. Es opcional: sin `CANAL_CLIPS` se saltea. Para usar otra cuenta, agregá la variable `TIKTOK_USUARIO`.
 
+### ⏰ Recordatorio de bump (#bumpeador)
+DISBOARD deja bumpear cada 2 horas, y solo con `/bump` hecho por una persona: un bot no puede, y automatizarlo con una cuenta personal va contra las reglas de Discord y DISBOARD. El bot lee el último bump en el canal y, cuando pasan las 2 horas, avisa una sola vez (mencionando el rol de `ROL_BUMP`, si está). Cuando alguien bumpea, borra el aviso viejo. Como corre cada 15 minutos, el aviso puede llegar hasta 15 minutos tarde.
+
 ### Consejos semanales (#tips)
 Todos los **viernes a las 12** (hora de Argentina), el bot busca el punto más flojo de cada jugador de #vincular entre 12 áreas de Leetify (puntería, headshots, preaim, spray, counter-strafe, utilidad, flashes, tradeos…) y publica en **#tips** qué practicar, con un mapa de workshop y videos. Menciona a cada uno **sin notificar**.
 
@@ -63,6 +66,8 @@ En este repositorio → **Settings → Secrets and variables → Actions**:
 | Variables (o Secrets) | `CANAL_RANKING` | ID de #ranking |
 | Variables (o Secrets) | `CANAL_HISTORIAL` | ID de #historial (para los resúmenes de partidas) |
 | Variables (o Secrets) | `CANAL_CLIPS` | ID de #clips (para los videos de TikTok) |
+| Variables (o Secrets) | `CANAL_BUMP` | ID de #bumpeador (para el recordatorio) |
+| Variables (o Secrets) | `ROL_BUMP` | *(opcional)* ID del rol al que avisa |
 | Variables (o Secrets) | `CANAL_TIPS` | ID de #tips (para los consejos) |
 
 ### 4. Probarlo
@@ -86,6 +91,7 @@ No hace falta `npm install`: no tiene dependencias (usa `fetch` y `node:test`, q
 | `src/semana.js` | Jugador de la semana: historial del Premier desde el viernes |
 | `src/partidas.js` | Resúmenes de partidas para #historial |
 | `src/tiktok.js` | Videos nuevos de TikTok para #clips |
+| `src/bump.js` | Recordatorio de bump de DISBOARD |
 | `src/ranking.js` | Arma el embed: tabla ordenada, colores de Premier y destacados |
 | `src/discord.js` | Cliente mínimo de la API de Discord |
 

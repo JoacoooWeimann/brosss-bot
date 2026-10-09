@@ -56,6 +56,7 @@ export function crearCliente(token, fetchFn = fetch) {
       }),
 
     enviar: (canal, cuerpo) => pedir("POST", `/channels/${canal}/messages`, cuerpo),
+    borrar: (canal, mensaje) => pedir("DELETE", `/channels/${canal}/messages/${mensaje}`),
     editar: (canal, mensaje, cuerpo) => pedir("PATCH", `/channels/${canal}/messages/${mensaje}`, cuerpo),
   };
 }

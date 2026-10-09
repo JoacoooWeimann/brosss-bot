@@ -16,6 +16,7 @@ import { armarEmbed } from "./ranking.js";
 import * as semana from "./semana.js";
 import { consultarPartidas, agrupar, embedPartida, yaPublicadas } from "./partidas.js";
 import { consultarTiktok, videosNuevos, mensajeVideo } from "./tiktok.js";
+import { revisarBump, mensajeBump } from "./bump.js";
 
 const ESPERA_MAXIMA_MS = 8000;
 const EN_PARALELO = 4; // para no saturar a Leetify
@@ -91,8 +92,21 @@ async function publicarClips({ cliente, pedir, canalClips, usuarioTiktok, botId,
   }
 }
 
+// Avisa en #bumpeador cuando ya se puede volver a bumpear en DISBOARD
+async function recordarBump({ cliente, canalBump, rolBump, botId, ahora }) {
+  try {
+    const { recordar, borrar } = revisarBump(await cliente.mensajes(canalBump, 50), { botId, ahora });
+    for (const id of borrar) await cliente.borrar(canalBump, id);
+    if (recordar) await cliente.enviar(canalBump, mensajeBump(rolBump));
+    return recordar;
+  } catch (error) {
+    console.warn(`Bump: ${error.message}`);
+    return false;
+  }
+}
+
 export async function ejecutar({
-  cliente, pedir, canalVincular, canalRanking, canalHistorial, canalClips, usuarioTiktok = "brosss.clips",
+  cliente, pedir, canalVincular, canalRanking, canalHistorial, canalClips, usuarioTiktok = "brosss.clips", canalBump, rolBump,
   claveLeetify, historial = null, ahora = Date.now(),
 }) {
   const registros = registrosDesdeMensajes(await cliente.mensajes(canalVincular));
@@ -127,7 +141,9 @@ export async function ejecutar({
 
   const clips = canalClips ? await publicarClips({ cliente, pedir, canalClips, usuarioTiktok, botId: yo.id, ahora }) : 0;
 
-  return { registrados: registros.length, enRanking: jugadores.length, partidas, clips, historial: historialNuevo };
+  const bump = canalBump ? await recordarBump({ cliente, canalBump, rolBump, botId: yo.id, ahora }) : false;
+
+  return { registrados: registros.length, enRanking: jugadores.length, partidas, clips, bump, historial: historialNuevo };
 }
 
 export const crearPedir = () => (url, cabeceras = {}) =>
@@ -144,6 +160,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const CANAL_RANKING = idDeCanal(process.env.CANAL_RANKING);
   const CANAL_HISTORIAL = idDeCanal(process.env.CANAL_HISTORIAL); // opcional
   const CANAL_CLIPS = idDeCanal(process.env.CANAL_CLIPS); // opcional
+  const CANAL_BUMP = idDeCanal(process.env.CANAL_BUMP); // opcional
+  const ROL_BUMP = idDeCanal(process.env.ROL_BUMP); // opcional (sirve igual para IDs de rol)
   const faltan = Object.entries({ DISCORD_TOKEN, CANAL_VINCULAR, CANAL_RANKING })
     .filter(([, v]) => !v)
     .map(([k]) => k);
@@ -162,12 +180,14 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     canalHistorial: CANAL_HISTORIAL,
     canalClips: CANAL_CLIPS,
     usuarioTiktok: process.env.TIKTOK_USUARIO || undefined,
+    canalBump: CANAL_BUMP,
+    rolBump: ROL_BUMP,
     claveLeetify: LEETIFY_API_KEY,
     historial,
   });
   const cambio = await semana.guardar(resumen.historial, historial);
   console.log(
     `Listo: ${resumen.enRanking} de ${resumen.registrados} jugadores en el ranking, ` +
-      `${resumen.partidas} partidas nuevas en el historial, ${resumen.clips} clips nuevos${cambio ? ", historial de la semana actualizado" : ""}.`
+      `${resumen.partidas} partidas nuevas en el historial, ${resumen.clips} clips nuevos${resumen.bump ? ", recordatorio de bump enviado" : ""}${cambio ? ", historial de la semana actualizado" : ""}.`
   );
 }
