@@ -16,11 +16,13 @@ import { urlVideo } from "./tiktok.js";
 export const TITULO = "BROSSS · Redes oficiales";
 const WEB = "https://brosssdiscord.netlify.app";
 // Las imágenes están en assets/ de este repo (público). TikTok, Kick y
-// Discord son los íconos oficiales de cada app. Si cambia una imagen,
-// subí VERSION: Discord guarda las imágenes en caché por dirección.
+// Discord son los íconos oficiales de cada app.
+// Si cambia una imagen, va con otro nombre (banner-v4.png) y se sube
+// VERSION: GitHub y Discord guardan las imágenes en caché, y con el
+// mismo nombre (aunque cambie un ?v=) pueden seguir mostrando la vieja.
 const ASSETS = "https://raw.githubusercontent.com/JoacoooWeimann/brosss-bot/main/assets";
-const VERSION = 2;
-const imagen = (nombre) => `${ASSETS}/${nombre}.png?v=${VERSION}`;
+const VERSION = 3;
+const imagen = (nombre) => `${ASSETS}/${nombre}-v${VERSION}.png`;
 export const IMAGENES = {
   banner: imagen("banner"),
   web: imagen("web"),
@@ -36,9 +38,10 @@ function tarjetaPortada(stats) {
   const numeros = stats
     ? `\n\n👥 **${miles(stats.miembros)}** miembros  ·  🟢 **${miles(stats.conectados)}** conectados ahora`
     : "";
+  // Sin url: Discord junta en una sola las tarjetas que tienen el mismo
+  // link, y la de la página ya apunta a la web
   return {
     title: TITULO,
-    url: WEB,
     description: `Todo lo de BROSSS en un solo lugar. Seguinos y no te pierdas nada 👇${numeros}`,
     color: COLORES.brosss,
     image: { url: IMAGENES.banner },

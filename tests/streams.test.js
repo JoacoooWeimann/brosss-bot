@@ -119,6 +119,9 @@ test("la tarjeta de redes: portada, página, TikTok, Kick e invitación, cada un
   assert.match(kick.fields[0].value, /EN VIVO.*12 👀/);
   assert.equal(inv.url, "https://discord.gg/th8xGPTBDX");
   assert.equal(new Set(embeds.map((e) => e.color)).size, 4);
+  // Si dos tarjetas tienen el mismo link, Discord las junta en una
+  const links = embeds.map((e) => e.url).filter(Boolean);
+  assert.equal(new Set(links).size, links.length);
 });
 
 test("sin nadie en vivo, Kick no tiene imagen; sin stats, la portada igual sale", () => {
