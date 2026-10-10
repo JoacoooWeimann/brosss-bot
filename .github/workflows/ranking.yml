@@ -30,6 +30,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          cache: npm
+      # sharp: para dibujar el ranking en imagen
+      - run: npm ci
       - run: npm test
       - run: node src/index.js
         env:

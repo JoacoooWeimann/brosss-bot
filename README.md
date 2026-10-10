@@ -9,7 +9,7 @@ No necesita un servidor prendido: **GitHub Actions** lo corre cada 15 minutos, h
 1. Cada jugador pega su link de Steam en **#🔗・vincular**.
 2. Cada 15 minutos el bot lee el canal y busca a cada uno en Steam y Leetify.
 3. Le reacciona **✅** si entró al ranking, o **❌** con un mensaje que explica qué le falta (una sola vez).
-4. Edita el mensaje fijo de **#🏆・ranking**. La primera vez lo crea.
+4. Edita el mensaje fijo de **#🏆・ranking**. La primera vez lo crea. El ranking va como **imagen**: podio para el top 3 con la foto de Discord de cada uno, chapas de Premier con los colores del juego, nivel de FACEIT, jugador de la semana y destacados. La imagen solo se vuelve a subir cuando cambia algún dato. Si no se puede dibujar, queda la tabla de texto.
 
 Para salir del ranking, el jugador borra su mensaje. Si manda otro link, vale el más nuevo.
 
@@ -98,7 +98,7 @@ En este repositorio → **Settings → Secrets and variables → Actions**:
 npm test
 ```
 
-No hace falta `npm install`: no tiene dependencias (usa `fetch` y `node:test`, que vienen con Node 22+).
+Antes, `npm install`: la única dependencia es [sharp](https://sharp.pixelplumbing.com/), para dibujar el ranking en imagen. La fuente Rajdhani está en `assets/fuentes/` (licencia OFL).
 
 | Archivo | Qué hace |
 |---|---|
@@ -116,6 +116,7 @@ No hace falta `npm install`: no tiene dependencias (usa `fetch` y `node:test`, q
 | `src/kick.js` | Lista de streamers (página + `KICK_EXTRA`) y estado en Kick |
 | `src/streams.js` | Alertas de stream para #streams |
 | `src/redes.js` | La tarjeta de #redes |
+| `src/ranking-imagen.js` | Dibuja el ranking en imagen (podio, chapas de Premier, FACEIT) |
 | `src/ranking.js` | Arma el embed: tabla ordenada, colores de Premier y destacados |
 | `src/discord.js` | Cliente mínimo de la API de Discord |
 

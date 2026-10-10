@@ -14,7 +14,8 @@ import { crearCliente } from "./discord.js";
 import { resolverSteamId } from "./steam.js";
 import { consultarLeetify } from "./leetify.js";
 import { registrosDesdeMensajes, OK, ERROR, MOTIVOS } from "./vincular.js";
-import { armarEmbed } from "./ranking.js";
+import { armarEmbed, embedConImagen, ordenar } from "./ranking.js";
+import { svgRanking, renderizar, huella, cargarAvatares } from "./ranking-imagen.js";
 import * as semana from "./semana.js";
 import { consultarPartidas, agrupar, embedPartida, yaPublicadas } from "./partidas.js";
 import { consultarTiktok, videosNuevos, mensajeVideo } from "./tiktok.js";
@@ -205,10 +206,39 @@ async function streamsYRedes({ cliente, pedir, canalStreams, canalRedes, rolStre
   return alertas;
 }
 
+// El ranking como imagen (podio, chapas de Premier, FACEIT). La imagen se
+// sube solo si cambió; si no, se edita el texto ("actualizado hace…").
+// Si no se puede dibujar, queda la tabla de texto de siempre.
+async function publicarRanking({ cliente, pedir, canalRanking, canalVincular, propio, jugadores, datosSemana, ahora, conImagen }) {
+  const textoPlano = {
+    embeds: [armarEmbed(jugadores, { canalVincular, ahora, semana: datosSemana })],
+    allowed_mentions: { parse: [] },
+    attachments: [],
+  };
+  if (conImagen) {
+    try {
+      const orden = ordenar(jugadores);
+      const avatares = await cargarAvatares(orden, pedir);
+      const svg = svgRanking(orden, { semana: datosSemana, avatares });
+      const archivo = `ranking-${huella(svg)}.png`;
+      const cuerpo = { embeds: [embedConImagen(archivo, { canalVincular, ahora })], allowed_mentions: { parse: [] } };
+      const yaEsta = propio?.attachments?.some((a) => a.filename === archivo);
+      if (propio && yaEsta) return await cliente.editar(canalRanking, propio.id, cuerpo);
+      const adjunto = [{ nombre: archivo, datos: await renderizar(svg) }];
+      if (propio) return await cliente.editarConArchivos(canalRanking, propio.id, cuerpo, adjunto);
+      return await cliente.enviarConArchivos(canalRanking, cuerpo, adjunto);
+    } catch (error) {
+      console.warn(`Ranking en imagen: ${error.message}. Queda la tabla de texto.`);
+    }
+  }
+  if (propio) await cliente.editar(canalRanking, propio.id, textoPlano);
+  else await cliente.enviar(canalRanking, textoPlano);
+}
+
 export async function ejecutar({
   cliente, pedir, canalVincular, canalRanking, canalHistorial, canalClips, usuarioTiktok = "brosss.clips", canalBump, rolBump, canalMemes, subreddits = SUBREDDITS, memesCada, memesForzar = false,
   canalStreams, canalRedes, rolStream, kickExtra = "",
-  claveLeetify, historial = null, ahora = Date.now(),
+  claveLeetify, historial = null, ahora = Date.now(), conImagen = false,
 }) {
   const registros = registrosDesdeMensajes(await cliente.mensajes(canalVincular));
   const resultados = await enTandas(registros, EN_PARALELO, (r) => evaluar(r, { pedir, claveLeetify }));
@@ -218,23 +248,19 @@ export async function ejecutar({
     const { estado, perfil, steamId } = resultados[i];
     await marcar(cliente, canalVincular, registro, estado);
     // En el ranking se ve el nombre de Discord, no el de Steam
-    if (estado === "ok") jugadores.push({ ...perfil, nombre: registro.nombre, steamId, usuarioId: registro.usuarioId });
+    if (estado === "ok")
+      jugadores.push({ ...perfil, nombre: registro.nombre, steamId, usuarioId: registro.usuarioId, avatar: registro.avatar });
   }
 
   // Jugador de la semana: el que más subió desde el viernes
   const historialNuevo = semana.actualizar(historial, jugadores, ahora);
   const datosSemana = { anterior: historialNuevo.anterior, actual: semana.lider(historialNuevo.base, jugadores) };
 
-  const cuerpo = {
-    embeds: [armarEmbed(jugadores, { canalVincular, ahora, semana: datosSemana })],
-    allowed_mentions: { parse: [] },
-  };
   const yo = await cliente.yo();
   const propio = (await cliente.mensajes(canalRanking, 50)).find(
     (m) => m.author?.id === yo.id && m.embeds?.[0]?.title?.startsWith("🏆")
   );
-  if (propio) await cliente.editar(canalRanking, propio.id, cuerpo);
-  else await cliente.enviar(canalRanking, cuerpo);
+  await publicarRanking({ cliente, pedir, canalRanking, canalVincular, propio, jugadores, datosSemana, ahora, conImagen });
 
   const partidas = canalHistorial
     ? await publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, jugadores, botId: yo.id, ahora })
@@ -310,6 +336,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     canalRedes: CANAL_REDES,
     rolStream: ROL_STREAM,
     kickExtra: process.env.KICK_EXTRA ?? "",
+    conImagen: true,
     claveLeetify: LEETIFY_API_KEY,
     historial,
   });

@@ -173,3 +173,10 @@ test("el ID del canal sirve solo, como mención o con espacios", () => {
   assert.equal(idDeCanal("#ranking"), "");
   assert.equal(idDeCanal(undefined), "");
 });
+
+test("foto de perfil: la propia o la de por defecto", async () => {
+  const { urlAvatar } = await import("../src/vincular.js");
+  assert.equal(urlAvatar({ id: "123", avatar: "abc" }), "https://cdn.discordapp.com/avatars/123/abc.png?size=128");
+  assert.match(urlAvatar({ id: "1557937551698821130" }), /^https:\/\/cdn\.discordapp\.com\/embed\/avatars\/[0-5]\.png$/);
+  assert.equal(urlAvatar({ id: "a" }), "https://cdn.discordapp.com/embed/avatars/0.png");
+});

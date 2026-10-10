@@ -29,11 +29,19 @@ export function registrosDesdeMensajes(mensajes) {
     usuarioId: mensaje.author.id,
     nombre: String(mensaje.author.global_name || mensaje.author.username || "Jugador").slice(0, 32),
     mensajeId: mensaje.id,
+    avatar: urlAvatar(mensaje.author),
     perfil,
     // Qué reacciones ya le puso el bot (para no repetir ni responder dos veces)
     reaccionOk: tieneReaccion(mensaje, OK),
     reaccionError: tieneReaccion(mensaje, ERROR),
   }));
+}
+
+// Foto de perfil de Discord (o la de por defecto si no tiene)
+export function urlAvatar(autor) {
+  if (autor?.avatar) return `https://cdn.discordapp.com/avatars/${autor.id}/${autor.avatar}.png?size=128`;
+  const n = /^\d+$/.test(String(autor?.id ?? "")) ? Number((BigInt(autor.id) >> 22n) % 6n) : 0;
+  return `https://cdn.discordapp.com/embed/avatars/${n}.png`;
 }
 
 function tieneReaccion(mensaje, emoji) {

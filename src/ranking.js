@@ -87,3 +87,16 @@ export function armarEmbed(jugadores, { canalVincular, ahora = Date.now(), seman
     footer: { text: "Datos de Leetify · se actualiza solo cada 15 min · la semana arranca los viernes a las 12", icon_url: ICONO },
   };
 }
+
+// El embed cuando el ranking va como imagen: solo el título, cómo entrar,
+// la hora y la imagen adjunta (la tabla, el podio y los destacados van en ella)
+export function embedConImagen(archivo, { canalVincular, ahora = Date.now() } = {}) {
+  const comoEntrar = canalVincular ? `Para entrar, pegá tu link de Steam en <#${canalVincular}>.\n` : "";
+  return {
+    title: "🏆 RANKING CS2 · BROSSS",
+    description: `${comoEntrar}Actualizado <t:${Math.floor(ahora / 1000)}:R>`,
+    color: VERDE,
+    image: { url: `attachment://${archivo}` },
+    footer: { text: "Datos de Leetify · se actualiza solo cada 15 min · la semana arranca los viernes a las 12", icon_url: ICONO },
+  };
+}
