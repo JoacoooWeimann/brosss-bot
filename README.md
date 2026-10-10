@@ -42,6 +42,13 @@ DISBOARD deja bumpear cada 2 horas, y solo con `/bump` hecho por una persona: un
 - **#redes:** un mensaje con la página, el TikTok (con el último clip), los canales de Kick (con quién está en vivo) y la invitación. El bot lo edita solo cuando algo cambia.
 - Kick está detrás de Cloudflare, que bloquea el `fetch` de Node: por eso se consulta con `curl`.
 
+### 🏆 Premios de la semana (#premios)
+Los viernes a las 12, con los consejos:
+- **💬 Más activo en el chat:** mensajes de los últimos 7 días en los canales de las categorías COMUNIDAD y COUNTER (se buscan por nombre; para otras, variable `CATEGORIAS_CHAT`). Los mensajes seguidos de la misma persona en menos de 5 segundos cuentan como uno, y no cuentan los bots.
+- **🎙️ Más activo en voz:** el bot no queda conectado, así que en cada vuelta (cada 15 min) se conecta un instante al gateway, mira quién está en voz y le suma 15 minutos. No cuenta el canal de AFK, estar solo (o solo con bots) ni estar ensordecido. Los minutos van en `datos/voz.json`.
+- Podio de 3 en cada uno. Con `ROL_CHAT` y `ROL_VOZ`, las medallas pasan solas al nuevo ganador (el bot necesita **Gestionar roles** y estar más arriba que esos roles).
+- La foto de voz solo se toma si está `CANAL_PREMIOS`.
+
 ### Consejos semanales (#tips)
 Todos los **viernes a las 12** (hora de Argentina), el bot busca el punto más flojo de cada jugador de #vincular entre 12 áreas de Leetify (puntería, headshots, preaim, spray, counter-strafe, utilidad, flashes, tradeos…) y publica en **#tips** qué practicar, con un mapa de workshop y videos. Menciona a cada uno **sin notificar**.
 
@@ -87,6 +94,10 @@ En este repositorio → **Settings → Secrets and variables → Actions**:
 | Variables (o Secrets) | `CANAL_REDES` | ID de #redes |
 | Variables (o Secrets) | `ROL_STREAM` | *(opcional)* ID del rol al que avisan las alertas |
 | Variables | `KICK_EXTRA` | *(opcional)* canales de Kick además de los de la página |
+| Variables (o Secrets) | `CANAL_PREMIOS` | ID de #premios (chat y voz de la semana) |
+| Variables (o Secrets) | `ROL_CHAT` | *(opcional)* ID de la medalla del más activo en el chat |
+| Variables (o Secrets) | `ROL_VOZ` | *(opcional)* ID de la medalla del más activo en voz |
+| Variables | `CATEGORIAS_CHAT` | *(opcional)* categorías que cuentan para el chat (por defecto `COMUNIDAD,COUNTER`) |
 | Variables (o Secrets) | `CANAL_TIPS` | ID de #tips (para los consejos) |
 
 ### 4. Probarlo
@@ -117,6 +128,8 @@ Antes, `npm install`: la única dependencia es [sharp](https://sharp.pixelplumbi
 | `src/streams.js` | Alertas de stream para #streams |
 | `src/redes.js` | La tarjeta de #redes |
 | `src/ranking-imagen.js` | Dibuja el ranking en imagen (podio, chapas de Premier, FACEIT) |
+| `src/voz.js` | Foto de quién está en voz y minutos de la semana |
+| `src/premios.js` | Premios de chat y voz, con sus medallas |
 | `src/ranking.js` | Arma el embed: tabla ordenada, colores de Premier y destacados |
 | `src/discord.js` | Cliente mínimo de la API de Discord |
 

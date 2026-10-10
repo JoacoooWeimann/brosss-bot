@@ -1,6 +1,7 @@
-# Los viernes a las 12 (Argentina): consejos en #tips y meme de la semana en #memes.
+# Los viernes a las 12 (Argentina): consejos en #tips, meme de la semana en #memes
+# y premios de chat y voz en #premios.
 # También se puede correr a mano: Actions → Consejos semanales → Run workflow.
-name: Consejos y meme de la semana
+name: Consejos y premios de la semana
 
 on:
   schedule:
@@ -36,3 +37,11 @@ jobs:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           CANAL_MEMES: ${{ vars.CANAL_MEMES || secrets.CANAL_MEMES }}
           ROL_MEME: ${{ vars.ROL_MEME || secrets.ROL_MEME }}
+      - run: node src/premios.js
+        if: success() || failure()
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          CANAL_PREMIOS: ${{ vars.CANAL_PREMIOS || secrets.CANAL_PREMIOS }}
+          ROL_CHAT: ${{ vars.ROL_CHAT || secrets.ROL_CHAT }}
+          ROL_VOZ: ${{ vars.ROL_VOZ || secrets.ROL_VOZ }}
+          CATEGORIAS_CHAT: ${{ vars.CATEGORIAS_CHAT }}

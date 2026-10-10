@@ -70,6 +70,22 @@ export function crearCliente(token, fetchFn = fetch) {
     ponerRol: (servidor, usuario, rol) => pedir("PUT", `/guilds/${servidor}/members/${usuario}/roles/${rol}`),
     sacarRol: (servidor, usuario, rol) => pedir("DELETE", `/guilds/${servidor}/members/${usuario}/roles/${rol}`),
 
+    canalesDelServidor: (servidor) => pedir("GET", `/guilds/${servidor}/channels`),
+
+    // Mensajes del canal hasta llegar a una fecha (tope de seguridad: 5000)
+    async mensajesDesde(canal, desde, tope = 5000) {
+      const todos = [];
+      let antes = "";
+      while (todos.length < tope) {
+        const pagina = await pedir("GET", `/channels/${canal}/messages?limit=100${antes ? `&before=${antes}` : ""}`);
+        todos.push(...pagina);
+        if (pagina.length < 100) break;
+        antes = pagina[pagina.length - 1].id;
+        if (Number((BigInt(antes) >> 22n) + 1420070400000n) < desde) break;
+      }
+      return todos;
+    },
+
     reaccionar: (canal, mensaje, e) => pedir("PUT", `/channels/${canal}/messages/${mensaje}/reactions/${emoji(e)}/@me`),
     sacarReaccion: (canal, mensaje, e) => pedir("DELETE", `/channels/${canal}/messages/${mensaje}/reactions/${emoji(e)}/@me`),
 
