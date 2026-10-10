@@ -15,14 +15,18 @@ import { urlVideo } from "./tiktok.js";
 
 export const TITULO = "BROSSS · Redes oficiales";
 const WEB = "https://brosssdiscord.netlify.app";
-// Las imágenes están en assets/ de este repo (público)
+// Las imágenes están en assets/ de este repo (público). TikTok, Kick y
+// Discord son los íconos oficiales de cada app. Si cambia una imagen,
+// subí VERSION: Discord guarda las imágenes en caché por dirección.
 const ASSETS = "https://raw.githubusercontent.com/JoacoooWeimann/brosss-bot/main/assets";
+const VERSION = 2;
+const imagen = (nombre) => `${ASSETS}/${nombre}.png?v=${VERSION}`;
 export const IMAGENES = {
-  banner: `${ASSETS}/banner.png`,
-  web: `${ASSETS}/web.png`,
-  tiktok: `${ASSETS}/tiktok.png`,
-  kick: `${ASSETS}/kick.png`,
-  invitacion: `${ASSETS}/invitacion.png`,
+  banner: imagen("banner"),
+  web: imagen("web"),
+  tiktok: imagen("tiktok"),
+  kick: imagen("kick"),
+  discord: imagen("discord"),
 };
 const COLORES = { brosss: 0x22e36b, tiktok: 0xfe2c55, kick: 0x53fc18, discord: 0x5865f2 };
 
@@ -105,12 +109,12 @@ function tarjetaKick(streamers) {
 
 function tarjetaInvitacion(codigo) {
   return {
-    author: { name: "INVITÁ A TUS AMIGOS", icon_url: IMAGENES.invitacion },
+    author: { name: "INVITÁ A TUS AMIGOS", icon_url: IMAGENES.discord },
     title: `discord.gg/${codigo}`,
     url: `https://discord.gg/${codigo}`,
     description: "Cada persona que sumás nos ayuda a crecer 💚\nCopiá el link y pasáselo a quien quieras.",
     color: COLORES.discord,
-    thumbnail: { url: IMAGENES.invitacion },
+    thumbnail: { url: IMAGENES.discord },
     footer: { text: "Se actualiza solo cada 15 minutos" },
   };
 }
