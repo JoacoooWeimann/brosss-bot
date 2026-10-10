@@ -134,3 +134,21 @@ test("vuelta completa: anuncia y pasa las medallas", async () => {
   assert.equal(r.estado, "ok");
   assert.deepEqual(acciones, ["anuncia 🥇 <@222> · 2 mensajes", "saca rc 111", "pone rc 222", "pone rv 444"]);
 });
+
+test("modo prueba: cuenta pero no publica ni toca roles, aunque ya haya anuncio", async () => {
+  const ahora = Date.parse("2026-10-10T16:00:00Z");
+  const acciones = [];
+  const cliente = {
+    yo: async () => ({ id: "bot" }),
+    mensajes: async () => [{ id: idEn(ahora - 3600e3), author: { id: "bot" }, ...mensajePremios({ chat: [["1", 1]], voz: [] }) }],
+    canal: async () => ({ guild_id: "g" }),
+    canalesDelServidor: async () => [{ id: "cat", type: 4, name: "COUNTER" }, { id: "cs", type: 0, parent_id: "cat", name: "general-conter" }],
+    mensajesDesde: async () => [{ id: idEn(ahora - 60e3), author: { id: "7" } }],
+    enviar: async () => acciones.push("envia"),
+    ponerRol: async () => acciones.push("rol"),
+    sacarRol: async () => acciones.push("rol"),
+  };
+  const r = await ejecutarPremios({ cliente, canalPremios: "p", rolChat: "rc", registroVoz: { minutos: { 9: 20 } }, ahora, prueba: true });
+  assert.deepEqual(r, { estado: "prueba", canales: ["general-conter"], chat: [["7", 1]], voz: [["9", 20]] });
+  assert.deepEqual(acciones, []);
+});

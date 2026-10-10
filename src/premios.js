@@ -113,10 +113,11 @@ async function pasarMedalla(cliente, servidor, rol, anterior, nuevo) {
   await cliente.ponerRol(servidor, nuevo, rol);
 }
 
-export async function ejecutarPremios({ cliente, canalPremios, rolChat, rolVoz, categorias, registroVoz, ahora = Date.now() }) {
+// prueba: cuenta todo pero no publica ni toca roles (para revisar en el log)
+export async function ejecutarPremios({ cliente, canalPremios, rolChat, rolVoz, categorias, registroVoz, ahora = Date.now(), prueba = false }) {
   const yo = await cliente.yo();
   const previos = anunciosPrevios(await cliente.mensajes(canalPremios, 50), { botId: yo.id, ahora });
-  if (previos.yaAnunciado) return { estado: "repetido" };
+  if (previos.yaAnunciado && !prueba) return { estado: "repetido" };
 
   const { guild_id: servidor } = await cliente.canal(canalPremios);
   const canales = canalesDeChat(await cliente.canalesDelServidor(servidor), categorias);
@@ -129,7 +130,9 @@ export async function ejecutarPremios({ cliente, canalPremios, rolChat, rolVoz, 
     }
   }
   const chat = top(contarMensajes(mensajesPorCanal, { ahora }));
-  const enVoz = top(voz.semanaParaPremios(registroVoz, ahora));
+  // En prueba se ve la semana en curso (la que todavía no terminó)
+  const enVoz = top(prueba ? (registroVoz?.minutos ?? {}) : voz.semanaParaPremios(registroVoz, ahora));
+  if (prueba) return { estado: "prueba", canales: canales.map((c) => c.name), chat, voz: enVoz };
 
   await cliente.enviar(canalPremios, mensajePremios({ chat, voz: enVoz, rolChat, rolVoz }));
   await pasarMedalla(cliente, servidor, rolChat, previos.chatAnterior, chat[0]?.[0]);
@@ -154,7 +157,14 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     rolVoz: idDeCanal(process.env.ROL_VOZ),
     categorias: categorias.length ? categorias : undefined,
     registroVoz: await voz.leer(),
+    prueba: process.env.PREMIOS_PRUEBA === "true",
   });
+  if (r.estado === "prueba") {
+    console.log(`PRUEBA (no se publicó nada). Canales de chat: ${r.canales.join(", ") || "ninguno"}`);
+    console.log(`Chat: ${r.chat.map(([u, n]) => `${u}=${n}`).join(", ") || "nadie"}`);
+    console.log(`Voz: ${r.voz.map(([u, m]) => `${u}=${horas(m)}`).join(", ") || "nadie"}`);
+    process.exit(0);
+  }
   console.log(
     r.estado === "repetido"
       ? "Los premios de esta semana ya estaban anunciados: no se repiten."

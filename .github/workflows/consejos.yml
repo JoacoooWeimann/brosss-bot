@@ -7,6 +7,11 @@ on:
   schedule:
     - cron: "0 15 * * 5"
   workflow_dispatch:
+    inputs:
+      premios_prueba:
+        description: "Premios en modo prueba: cuenta y muestra en el log, sin publicar"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -45,3 +50,4 @@ jobs:
           ROL_CHAT: ${{ vars.ROL_CHAT || secrets.ROL_CHAT }}
           ROL_VOZ: ${{ vars.ROL_VOZ || secrets.ROL_VOZ }}
           CATEGORIAS_CHAT: ${{ vars.CATEGORIAS_CHAT }}
+          PREMIOS_PRUEBA: ${{ inputs.premios_prueba }}
