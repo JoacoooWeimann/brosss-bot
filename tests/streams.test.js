@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { slugDeKick, leerConfigWeb, juntarStreamers, resumirCanal, duracion } from "../src/kick.js";
 import { alertasPrevias, revisarStreams, mensajeEnVivo, embedTerminado } from "../src/streams.js";
-import { embedsRedes, hayCambios, TITULO, IMAGENES } from "../src/redes.js";
+import { embedsRedes, hayCambios, TITULO, IMAGENES, proximaMeta, barra, compacto } from "../src/redes.js";
 
 // ---------- Kick ----------
 
@@ -101,7 +101,11 @@ test("la tarjeta de redes: portada, página, TikTok, Kick e invitación, cada un
       { streamer: ibran, canal: { ...enVivo("1"), espectadores: 12, miniatura: "https://x/t.jpg" } },
       { streamer: { nombre: null, slug: "nuevo" }, canal: null },
     ],
-    tiktok: { usuario: "brosss.clips", videos: [{ id: "123", titulo: "tomatomatoma", vistas: 1500 }] },
+    tiktok: {
+      usuario: "brosss.clips",
+      videos: [{ id: "123", titulo: "tomatomatoma", vistas: 1500 }],
+      perfil: { seguidores: 15400, meGusta: 202500 },
+    },
     invitacion: "th8xGPTBDX",
     stats: { miembros: 147, conectados: 19 },
   });
@@ -111,7 +115,12 @@ test("la tarjeta de redes: portada, página, TikTok, Kick e invitación, cada un
   assert.equal(portada.image.url, IMAGENES.banner);
   assert.match(portada.description, /\*\*147\*\* miembros.*\*\*19\*\* conectados/);
   assert.equal(web.url, "https://brosssdiscord.netlify.app");
-  assert.deepEqual(tiktok.fields.map((f) => f.value), ["[tomatomatoma](https://www.tiktok.com/@brosss.clips/video/123)", "1.500"]);
+  assert.deepEqual(tiktok.fields.map((f) => f.value), [
+    "## 15,4K",
+    "## 202,5K",
+    "[tomatomatoma](https://www.tiktok.com/@brosss.clips/video/123) · 👀 1.500",
+  ]);
+  assert.match(tiktok.description, /Vamos por los 20\.000\*\* · faltan 4\.600\n▰+▱+ \*\*77%\*\*/);
   // Kick: el que está en vivo es el destacado, va primero y muestra su directo
   assert.equal(kick.title, "🔴 iBranDou está en vivo");
   assert.equal(kick.image.url, "https://x/t.jpg");
@@ -136,4 +145,14 @@ test("solo edita si cambió algo visible", () => {
   assert.equal(hayCambios({ embeds: structuredClone(embeds) }, embeds), false);
   assert.equal(hayCambios({ embeds }, embedsRedes({ invitacion: "abc", stats: { miembros: 2, conectados: 1 } })), true);
   assert.equal(hayCambios(null, embeds), true);
+});
+
+test("números cortos, próxima meta y barra de progreso", () => {
+  assert.equal(compacto(15400), "15,4K");
+  assert.equal(compacto(202500), "202,5K");
+  assert.equal(compacto(1250000), "1,3M");
+  assert.equal(compacto(950), "950");
+  assert.deepEqual([800, 15400, 20000, 21000, 60000, 99000].map(proximaMeta), [1000, 20000, 25000, 25000, 75000, 100000]);
+  assert.equal(barra(15400, 20000, 10), "▰▰▰▰▰▰▰▰▱▱ **77%**");
+  assert.equal(barra(30000, 20000, 4), "▰▰▰▰ **100%**");
 });

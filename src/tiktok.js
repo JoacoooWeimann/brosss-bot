@@ -19,15 +19,34 @@ export const urlVideo = (usuario, id) => `https://www.tiktok.com/@${usuario}/vid
 // los segundos desde 1970
 export const fechaDeId = (id) => Number(BigInt(id) >> 32n) * 1000;
 
-// Busca "videoList" en cualquier parte del JSON
-function buscarLista(objeto) {
+// Busca una clave ("videoList", "userInfo") en cualquier parte del JSON
+function buscar(objeto, clave) {
   if (!objeto || typeof objeto !== "object") return null;
-  if (Array.isArray(objeto.videoList)) return objeto.videoList;
+  if (objeto[clave] && typeof objeto[clave] === "object") return objeto[clave];
   for (const valor of Object.values(objeto)) {
-    const lista = buscarLista(valor);
-    if (lista) return lista;
+    const encontrado = buscar(valor, clave);
+    if (encontrado) return encontrado;
   }
   return null;
+}
+
+const leerEstado = (html) => {
+  const m = /<script id="__FRONTITY_CONNECT_STATE__"[^>]*>([\s\S]*?)<\/script>/.exec(String(html));
+  if (!m) return null; // TikTok cambió la página
+  try {
+    return JSON.parse(m[1]);
+  } catch {
+    return null;
+  }
+};
+
+const cantidad = (n) => (Number.isFinite(n) && n >= 0 ? n : null);
+
+// Seguidores y me gusta de la cuenta
+export function leerPerfil(html) {
+  const info = buscar(leerEstado(html), "userInfo");
+  if (!info) return null;
+  return { seguidores: cantidad(info.followerCount), meGusta: cantidad(info.heartCount), nombre: String(info.nickname ?? "") };
 }
 
 // Saca hashtags, links y espacios de más de la descripción
@@ -42,16 +61,8 @@ export function limpiarTitulo(desc) {
 }
 
 export function leerVideos(html) {
-  const m = /<script id="__FRONTITY_CONNECT_STATE__"[^>]*>([\s\S]*?)<\/script>/.exec(String(html));
-  if (!m) return null; // TikTok cambió la página
-  let estado;
-  try {
-    estado = JSON.parse(m[1]);
-  } catch {
-    return null;
-  }
-  const lista = buscarLista(estado);
-  if (!lista) return null;
+  const lista = buscar(leerEstado(html), "videoList");
+  if (!Array.isArray(lista)) return null;
   return lista
     .filter((v) => /^\d{15,20}$/.test(String(v.id)) && !v.privateItem)
     .map((v) => ({
@@ -77,9 +88,10 @@ export async function consultarTiktok(usuario, pedir, { intentos = 3, espera = 3
     ultimo = res.status;
     if (res.status === 429 || res.status >= 500) continue;
     if (!res.ok) break;
-    const videos = leerVideos(await res.text());
+    const html = await res.text();
+    const videos = leerVideos(html);
     if (!videos) throw new Error("TikTok cambió la página de embed: no encontré la lista de videos");
-    return videos;
+    return { videos, perfil: leerPerfil(html) };
   }
   throw new Error(`TikTok respondió ${ultimo}`);
 }

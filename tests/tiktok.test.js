@@ -1,10 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { leerVideos, limpiarTitulo, fechaDeId, videosNuevos, mensajeVideo, urlVideo } from "../src/tiktok.js";
+import { leerVideos, leerPerfil, limpiarTitulo, fechaDeId, videosNuevos, mensajeVideo, urlVideo } from "../src/tiktok.js";
 
-const pagina = (lista) =>
+const pagina = (lista, userInfo = {}) =>
   `<html><script id="__FRONTITY_CONNECT_STATE__" type="application/json">${JSON.stringify({
-    source: { data: { "/embed/@brosss.clips?lang=es": { userInfo: {}, videoList: lista } } },
+    source: { data: { "/embed/@brosss.clips?lang=es": { userInfo, videoList: lista } } },
   })}</script></html>`;
 
 test("la fecha sale del ID del video", () => {
@@ -56,8 +56,15 @@ test("reintenta si TikTok corta y avisa si sigue fallando", async () => {
   const { consultarTiktok } = await import("../src/tiktok.js");
   const respuestas = [{ status: 503 }, { status: 429 }, { status: 200, ok: true, text: async () => pagina([{ id: "7461024379594345733", desc: "hola" }]) }];
   let n = 0;
-  const videos = await consultarTiktok("brosss.clips", async () => respuestas[n++], { espera: 1 });
+  const { videos } = await consultarTiktok("brosss.clips", async () => respuestas[n++], { espera: 1 });
   assert.equal(n, 3);
   assert.equal(videos[0].titulo, "hola");
   await assert.rejects(consultarTiktok("brosss.clips", async () => ({ status: 503 }), { espera: 1 }), /503/);
+});
+
+test("lee seguidores y me gusta de la cuenta", () => {
+  const html = pagina([], { followerCount: 15400, heartCount: 202500, nickname: "BROSSS" });
+  assert.deepEqual(leerPerfil(html), { seguidores: 15400, meGusta: 202500, nombre: "BROSSS" });
+  assert.deepEqual(leerPerfil(pagina([], { followerCount: -1 })), { seguidores: null, meGusta: null, nombre: "" });
+  assert.equal(leerPerfil("<html></html>"), null);
 });

@@ -82,7 +82,8 @@ async function publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, 
   }
 }
 
-// Los últimos videos de TikTok (para #clips y #redes). Si falla, null.
+// Los últimos videos y los números de la cuenta de TikTok (para #clips
+// y #redes). Si falla, null.
 async function videosTiktok(usuario, pedir) {
   try {
     return await consultarTiktok(usuario, pedir);
@@ -153,7 +154,7 @@ async function publicarMeme({ cliente, pedir, canalMemes, subreddits, memesCada,
 }
 
 // Kick: alertas en #streams y la tarjeta de #redes
-async function streamsYRedes({ cliente, pedir, canalStreams, canalRedes, rolStream, kickExtra, usuarioTiktok, videos, botId, ahora }) {
+async function streamsYRedes({ cliente, pedir, canalStreams, canalRedes, rolStream, kickExtra, usuarioTiktok, tiktok, botId, ahora }) {
   let configWeb = {};
   try {
     configWeb = await cargarConfigWeb(pedir);
@@ -187,7 +188,7 @@ async function streamsYRedes({ cliente, pedir, canalStreams, canalRedes, rolStre
     try {
       const embeds = embedsRedes({
         streamers: estados,
-        tiktok: { usuario: usuarioTiktok, videos: videos ?? [] },
+        tiktok: { usuario: usuarioTiktok, videos: tiktok?.videos ?? [], perfil: tiktok?.perfil ?? null },
         invitacion: configWeb.codigoInvitacion,
         stats: await consultarStats(configWeb.codigoInvitacion, pedir).catch(() => null),
       });
@@ -239,8 +240,10 @@ export async function ejecutar({
     ? await publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, jugadores, botId: yo.id, ahora })
     : 0;
 
-  const videos = canalClips || canalRedes ? await videosTiktok(usuarioTiktok, pedir) : null;
-  const clips = canalClips ? await publicarClips({ cliente, canalClips, usuarioTiktok, videos, botId: yo.id, ahora }) : 0;
+  const tiktok = canalClips || canalRedes ? await videosTiktok(usuarioTiktok, pedir) : null;
+  const clips = canalClips
+    ? await publicarClips({ cliente, canalClips, usuarioTiktok, videos: tiktok?.videos, botId: yo.id, ahora })
+    : 0;
 
   const bump = canalBump ? await recordarBump({ cliente, canalBump, rolBump, botId: yo.id, ahora }) : false;
 
@@ -248,7 +251,7 @@ export async function ejecutar({
 
   const streams =
     canalStreams || canalRedes
-      ? await streamsYRedes({ cliente, pedir, canalStreams, canalRedes, rolStream, kickExtra, usuarioTiktok, videos, botId: yo.id, ahora })
+      ? await streamsYRedes({ cliente, pedir, canalStreams, canalRedes, rolStream, kickExtra, usuarioTiktok, tiktok, botId: yo.id, ahora })
       : 0;
 
   return { registrados: registros.length, enRanking: jugadores.length, partidas, clips, bump, meme, streams, historial: historialNuevo };

@@ -59,19 +59,49 @@ function tarjetaWeb() {
   };
 }
 
-function tarjetaTiktok({ usuario, videos = [] }) {
+// 15400 → "15,4K"; 1250000 → "1,3M"; 950 → "950"
+export function compacto(n) {
+  const corto = (x, sufijo) => `${(Math.round(x * 10) / 10).toString().replace(".", ",")}${sufijo}`;
+  if (n >= 1e6) return corto(n / 1e6, "M");
+  if (n >= 1e3) return corto(n / 1e3, "K");
+  return String(n);
+}
+
+// La próxima meta redonda: 15.400 → 20.000; 21.000 → 25.000; 60.000 → 75.000
+export function proximaMeta(n) {
+  const pasos = [1, 2, 2.5, 5, 7.5];
+  for (let escala = 1000; ; escala *= 10) {
+    for (const p of pasos) if (p * escala > n) return p * escala;
+  }
+}
+
+// ▰▰▰▰▰▰▰▱▱▱ 77%
+export function barra(actual, meta, largo = 12) {
+  const parte = Math.max(0, Math.min(1, actual / meta));
+  const llenos = Math.round(parte * largo);
+  return `${"▰".repeat(llenos)}${"▱".repeat(largo - llenos)} **${Math.floor(parte * 100)}%**`;
+}
+
+function tarjetaTiktok({ usuario, videos = [], perfil = null }) {
   const ultimo = videos[0];
-  const fields = ultimo
-    ? [
-        { name: "🎬 Último clip", value: `[${ultimo.titulo || "Ver clip"}](${urlVideo(usuario, ultimo.id)})`, inline: true },
-        ...(ultimo.vistas != null ? [{ name: "👀 Vistas", value: miles(ultimo.vistas), inline: true }] : []),
-      ]
-    : [];
+  const fields = [];
+  if (perfil?.seguidores != null) fields.push({ name: "👥 Seguidores", value: `## ${compacto(perfil.seguidores)}`, inline: true });
+  if (perfil?.meGusta != null) fields.push({ name: "❤️ Me gusta", value: `## ${compacto(perfil.meGusta)}`, inline: true });
+  if (ultimo) {
+    const vistas = ultimo.vistas != null ? ` · 👀 ${miles(ultimo.vistas)}` : "";
+    fields.push({ name: "🔥 Último clip", value: `[${ultimo.titulo || "Ver clip"}](${urlVideo(usuario, ultimo.id)})${vistas}`, inline: false });
+  }
+
+  const meta = perfil?.seguidores != null ? proximaMeta(perfil.seguidores) : null;
+  const objetivo = meta
+    ? `\n\n🎯 **Vamos por los ${miles(meta)}** · faltan ${miles(meta - perfil.seguidores)}\n${barra(perfil.seguidores, meta)}`
+    : "";
+
   return {
-    author: { name: "TIKTOK", icon_url: IMAGENES.tiktok },
-    title: `@${usuario}`,
+    author: { name: `TIKTOK · @${usuario}`, icon_url: IMAGENES.tiktok },
+    title: "Seguinos en TikTok",
     url: `https://www.tiktok.com/@${usuario}`,
-    description: "Los mejores momentos de la comunidad. ¡Seguinos y compartí! 🔥",
+    description: `Los mejores momentos de la comunidad. Cada follow suma 🔥${objetivo}`,
     color: COLORES.tiktok,
     thumbnail: { url: IMAGENES.tiktok },
     fields,
