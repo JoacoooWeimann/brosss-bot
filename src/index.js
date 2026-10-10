@@ -16,7 +16,6 @@ import { consultarLeetify } from "./leetify.js";
 import { registrosDesdeMensajes, OK, ERROR, MOTIVOS } from "./vincular.js";
 import { armarEmbed, embedConImagen, ordenar } from "./ranking.js";
 import { svgRanking, renderizar, huella, cargarAvatares } from "./ranking-imagen.js";
-import * as voz from "./voz.js";
 import * as semana from "./semana.js";
 import { consultarPartidas, agrupar, embedPartida, yaPublicadas } from "./partidas.js";
 import { consultarTiktok, videosNuevos, mensajeVideo } from "./tiktok.js";
@@ -236,22 +235,10 @@ async function publicarRanking({ cliente, pedir, canalRanking, canalVincular, pr
   else await cliente.enviar(canalRanking, textoPlano);
 }
 
-// Suma 15 minutos a quien esté en voz ahora (para el premio de la semana)
-async function registrarVoz({ cliente, canalVincular, fotoVoz, registroVoz, ahora }) {
-  try {
-    const { guild_id } = await cliente.canal(canalVincular);
-    const usuarios = voz.quienesCuentan(await fotoVoz(guild_id));
-    return { registro: voz.sumar(registroVoz, usuarios, ahora), enVoz: usuarios.length };
-  } catch (error) {
-    console.warn(`Voz: ${error.message}`);
-    return { registro: registroVoz, enVoz: 0 };
-  }
-}
-
 export async function ejecutar({
   cliente, pedir, canalVincular, canalRanking, canalHistorial, canalClips, usuarioTiktok = "brosss.clips", canalBump, rolBump, canalMemes, subreddits = SUBREDDITS, memesCada, memesForzar = false,
   canalStreams, canalRedes, rolStream, kickExtra = "",
-  claveLeetify, historial = null, ahora = Date.now(), conImagen = false, fotoVoz = null, registroVoz = null,
+  claveLeetify, historial = null, ahora = Date.now(), conImagen = false,
 }) {
   const registros = registrosDesdeMensajes(await cliente.mensajes(canalVincular));
   const resultados = await enTandas(registros, EN_PARALELO, (r) => evaluar(r, { pedir, claveLeetify }));
@@ -297,11 +284,9 @@ export async function ejecutar({
       ? await streamsYRedes({ cliente, pedir, canalStreams, canalRedes, rolStream, kickExtra, usuarioTiktok, tiktok, botId: yo.id, ahora })
       : 0;
 
-  const enVoz = fotoVoz ? await registrarVoz({ cliente, canalVincular, fotoVoz, registroVoz, ahora }) : { registro: registroVoz, enVoz: 0 };
-
   return {
     registrados: registros.length, enRanking: jugadores.length, partidas, clips, bump, meme, streams,
-    historial: historialNuevo, registroVoz: enVoz.registro, enVoz: enVoz.enVoz,
+    historial: historialNuevo,
   };
 }
 
@@ -340,7 +325,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   const pedir = crearPedir();
   const historial = await semana.leer();
-  const registroVoz = await voz.leer();
   const resumen = await ejecutar({
     cliente: crearCliente(DISCORD_TOKEN),
     pedir,
@@ -360,16 +344,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     rolStream: ROL_STREAM,
     kickExtra: process.env.KICK_EXTRA ?? "",
     conImagen: true,
-    // La foto de voz solo hace falta si hay premios
-    fotoVoz: process.env.CANAL_PREMIOS ? (servidor) => voz.fotoDeVoz(DISCORD_TOKEN, servidor) : null,
-    registroVoz,
     claveLeetify: LEETIFY_API_KEY,
     historial,
   });
   const cambio = await semana.guardar(resumen.historial, historial);
-  if (resumen.registroVoz) await voz.guardar(resumen.registroVoz, registroVoz);
   console.log(
     `Listo: ${resumen.enRanking} de ${resumen.registrados} jugadores en el ranking, ` +
-      `${resumen.partidas} partidas nuevas en el historial, ${resumen.clips} clips nuevos${resumen.bump ? ", recordatorio de bump enviado" : ""}${resumen.meme ? ", meme publicado" : ""}${resumen.streams ? `, ${resumen.streams} alertas de stream` : ""}${resumen.enVoz ? `, ${resumen.enVoz} en voz` : ""}${cambio ? ", historial de la semana actualizado" : ""}.`
+      `${resumen.partidas} partidas nuevas en el historial, ${resumen.clips} clips nuevos${resumen.bump ? ", recordatorio de bump enviado" : ""}${resumen.meme ? ", meme publicado" : ""}${resumen.streams ? `, ${resumen.streams} alertas de stream` : ""}${cambio ? ", historial de la semana actualizado" : ""}.`
   );
 }

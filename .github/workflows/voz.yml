@@ -1,0 +1,40 @@
+# Cada 5 minutos: quién está en voz (para el premio de la semana).
+# Lo lanza cron-job.org (el reloj de GitHub se atrasa); también a mano.
+name: Voz
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: voz
+  cancel-in-progress: false
+
+# write: para guardar datos/voz.json
+permissions:
+  contents: write
+
+jobs:
+  voz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      # Sin npm ci: esta vuelta no usa sharp
+      - run: node src/voz-vuelta.js
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          CANAL_PREMIOS: ${{ vars.CANAL_PREMIOS || secrets.CANAL_PREMIOS }}
+      - name: Guardar minutos
+        run: |
+          if [ -n "$(git status --porcelain datos)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add datos
+            git commit -m "Minutos en voz"
+            for i in 1 2 3; do git pull --rebase && git push && break; sleep 5; done
+          fi

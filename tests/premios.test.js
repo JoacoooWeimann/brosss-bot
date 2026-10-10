@@ -41,17 +41,29 @@ test("cuentan los que están acompañados: no AFK, no solos, no ensordecidos, no
   assert.deepEqual(quienesCuentan({ estados, afk: "afk", bots: new Set(["musica"]) }).sort(), ["a", "b"]);
 });
 
-test("suma 15 minutos por vuelta y al cambiar de semana guarda la anterior", () => {
+test("suma 5 minutos por vuelta, sin contar dos veces la misma vuelta", () => {
+  const jueves = Date.parse("2026-10-08T20:00:00Z");
+  let r = sumar(null, ["a", "b"], jueves);
+  assert.deepEqual(r.minutos, { a: 5, b: 5 });
+  // El workflow corrió dos veces seguidas: la segunda no suma
+  assert.deepEqual(sumar(r, ["a"], jueves + 30e3).minutos, { a: 5, b: 5 });
+  r = sumar(r, ["a"], jueves + 5 * 60e3);
+  assert.deepEqual(r.minutos, { a: 10, b: 5 });
+  // Nadie en voz: el registro no cambia (así no hay commit)
+  assert.equal(sumar(r, [], jueves + 10 * 60e3), r);
+});
+
+test("con vueltas de 15 suma 15, y al cambiar de semana guarda la anterior", () => {
   const jueves = Date.parse("2026-10-08T20:00:00Z");
   const sabado = Date.parse("2026-10-10T20:00:00Z");
-  let r = sumar(null, ["a", "b"], jueves);
-  r = sumar(r, ["a"], jueves);
+  let r = sumar(null, ["a", "b"], jueves, 15);
+  r = sumar(r, ["a"], jueves + 15 * 60e3, 15);
   assert.deepEqual(r.minutos, { a: 30, b: 15 });
   // Viernes 12:30: la semana ya terminó pero la voz todavía no la cerró → usa la que está
   assert.deepEqual(semanaParaPremios(r, Date.parse("2026-10-09T15:30:00Z")), { a: 30, b: 15 });
   // Antes del viernes a las 12, la última terminada es la anterior (acá no hay)
   assert.deepEqual(semanaParaPremios(r, Date.parse("2026-10-09T14:00:00Z")), {});
-  r = sumar(r, ["c"], sabado);
+  r = sumar(r, ["c"], sabado, 15);
   assert.deepEqual(r.minutos, { c: 15 });
   assert.deepEqual(r.anterior.minutos, { a: 30, b: 15 });
   assert.deepEqual(semanaParaPremios(r, sabado), { a: 30, b: 15 });

@@ -1,8 +1,8 @@
 // =============================================================
 //  ACTIVIDAD EN VOZ
-//  El bot no queda conectado, así que no puede cronometrar. En cada
-//  vuelta (cada 15 min) se conecta un instante al gateway de Discord,
-//  mira quién está en un canal de voz y le suma 15 minutos.
+//  El bot no queda conectado, así que no puede cronometrar. Cada 5
+//  minutos (workflow voz.yml) se conecta un instante al gateway de
+//  Discord, mira quién está en un canal de voz y le suma 5 minutos.
 //
 //  No cuenta: el canal de AFK, a quien está solo (o solo con bots)
 //  y a quien está ensordecido. Así no se puede "farmear".
@@ -17,7 +17,7 @@ import { dirname } from "node:path";
 import { inicioSemana } from "./semana.js";
 
 export const ARCHIVO = new URL("../datos/voz.json", import.meta.url);
-export const MINUTOS_POR_VUELTA = 15;
+export const MINUTOS_POR_VUELTA = 5;
 const GATEWAY = "wss://gateway.discord.gg/?v=10&encoding=json";
 const INTENTS = (1 << 0) | (1 << 7); // GUILDS + GUILD_VOICE_STATES (ninguno privilegiado)
 
@@ -64,16 +64,20 @@ export function quienesCuentan({ estados, afk, bots }) {
   return [...porCanal.values()].filter((usuarios) => usuarios.length >= 2).flat();
 }
 
-// Suma la foto al registro de la semana (y guarda la anterior al cambiar)
-export function sumar(registro, usuarios, ahora) {
+// Suma la foto al registro de la semana (y guarda la anterior al cambiar).
+// Si ya se sumó hace menos de una vuelta (el workflow corrió dos veces
+// seguidas: cron-job.org y GitHub a la vez), no suma de nuevo.
+export function sumar(registro, usuarios, ahora, cada = MINUTOS_POR_VUELTA) {
   const semana = inicioSemana(ahora);
   let r = registro;
   if (!r || r.semana !== semana) {
     r = { semana, minutos: {}, anterior: r ? { semana: r.semana, minutos: r.minutos } : null };
   }
+  if (!usuarios.length) return r;
+  if (r.ultima && ahora - Date.parse(r.ultima) < (cada - 1) * 60000) return r;
   const minutos = { ...r.minutos };
-  for (const u of usuarios) minutos[u] = (minutos[u] ?? 0) + MINUTOS_POR_VUELTA;
-  return { ...r, minutos };
+  for (const u of usuarios) minutos[u] = (minutos[u] ?? 0) + cada;
+  return { ...r, minutos, ultima: new Date(ahora).toISOString() };
 }
 
 // Los minutos de la semana que terminó (para los premios del viernes).
