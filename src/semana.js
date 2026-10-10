@@ -38,6 +38,16 @@ export function lider(base, jugadores) {
   return mejor;
 }
 
+// Cuánto subió o bajó cada uno desde el viernes: { usuarioId: +322 }
+export function cambios(base, jugadores) {
+  const salida = {};
+  for (const j of jugadores) {
+    const antes = base[j.steamId]?.premier;
+    if (antes != null && j.premier != null && j.premier !== antes) salida[j.usuarioId] = j.premier - antes;
+  }
+  return salida;
+}
+
 const foto = (j) => ({ premier: j.premier ?? null });
 
 // Devuelve el historial nuevo. Si empezó otra semana, guarda al

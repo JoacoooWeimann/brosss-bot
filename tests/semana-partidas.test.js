@@ -121,3 +121,15 @@ test("nombres de mapa y partidas ya publicadas", () => {
   );
   assert.deepEqual([...set], [urlPartida("a")]);
 });
+
+test("cuánto subió o bajó cada uno desde el viernes", async () => {
+  const { cambios } = await import("../src/semana.js");
+  const base = { a: { premier: 10000 }, b: { premier: 15000 }, c: { premier: null } };
+  const jugadores = [
+    { steamId: "a", usuarioId: "1", premier: 10322 },
+    { steamId: "b", usuarioId: "2", premier: 14850 },
+    { steamId: "c", usuarioId: "3", premier: 9000 },
+    { steamId: "d", usuarioId: "4", premier: 5000 },
+  ];
+  assert.deepEqual(cambios(base, jugadores), { 1: 322, 2: -150 });
+});

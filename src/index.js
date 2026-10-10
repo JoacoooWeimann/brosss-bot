@@ -219,7 +219,7 @@ async function publicarRanking({ cliente, pedir, canalRanking, canalVincular, pr
     try {
       const orden = ordenar(jugadores);
       const avatares = await cargarAvatares(orden, pedir);
-      const svg = svgRanking(orden, { semana: datosSemana, avatares });
+      const svg = svgRanking(orden, { semana: datosSemana, avatares, cambios: datosSemana.cambios ?? {} });
       const archivo = `ranking-${huella(svg)}.png`;
       const cuerpo = { embeds: [embedConImagen(archivo, { canalVincular, ahora })], allowed_mentions: { parse: [] } };
       const yaEsta = propio?.attachments?.some((a) => a.filename === archivo);
@@ -254,7 +254,11 @@ export async function ejecutar({
 
   // Jugador de la semana: el que más subió desde el viernes
   const historialNuevo = semana.actualizar(historial, jugadores, ahora);
-  const datosSemana = { anterior: historialNuevo.anterior, actual: semana.lider(historialNuevo.base, jugadores) };
+  const datosSemana = {
+    anterior: historialNuevo.anterior,
+    actual: semana.lider(historialNuevo.base, jugadores),
+    cambios: semana.cambios(historialNuevo.base, jugadores),
+  };
 
   const yo = await cliente.yo();
   const propio = (await cliente.mensajes(canalRanking, 50)).find(

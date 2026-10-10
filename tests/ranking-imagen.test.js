@@ -38,3 +38,15 @@ test("se convierte a PNG", async () => {
   const png = await renderizar(svgRanking([j("1", "Kyo", 18926), j("2", "Joacooo", 16743)]));
   assert.deepEqual([...png.subarray(1, 4)], [0x50, 0x4e, 0x47]); // "PNG"
 });
+
+test("cambio de la semana, mini stats del podio y SIN RANGO", () => {
+  const svg = svgRanking(
+    [j("1", "Kyo", 18926, { aim: 96, hs: 27, winrate: 0.5 }), j("2", "Joacooo", 16743), j("3", "Benja", null), j("4", "Valen", 9000)],
+    { cambios: { 1: 322, 2: -150, 4: 40 } }
+  );
+  assert.ok(svg.includes("▲ +322"));
+  assert.ok(svg.includes("▼ −150"));
+  assert.ok(svg.includes("▲ +40"));
+  assert.match(svg, /AIM <tspan[^>]*>96<\/tspan>.*HS <tspan[^>]*>27%<\/tspan>.*WR <tspan[^>]*>50%<\/tspan>/);
+  assert.ok(svg.includes("SIN RANGO"));
+});

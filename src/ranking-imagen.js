@@ -46,7 +46,7 @@ export const escapar = (t) =>
 
 const cortar = (t, n) => (t.length > n ? t.slice(0, n - 1) + "…" : t);
 // Como en el juego: 18,926
-const premierTexto = (p) => (p == null ? "—" : p.toLocaleString("en-US"));
+const premierTexto = (p) => (p == null ? "SIN RANGO" : p.toLocaleString("en-US"));
 const miles = (n) => Number(n).toLocaleString("es-AR");
 
 // Chapa de Premier: un paralelogramo del color del rango con el número
@@ -56,7 +56,7 @@ function chapa(x, y, premier, alto = 46, ancho = 170) {
   return `<g>
     <polygon points="${x + s},${y} ${x + ancho},${y} ${x + ancho - s},${y + alto} ${x},${y + alto}" fill="${c}" fill-opacity="0.18" stroke="${c}" stroke-width="2.5"/>
     <polygon points="${x + s + 6},${y + 5} ${x + s + 16},${y + 5} ${x + 10},${y + alto - 5} ${x},${y + alto - 5}" fill="${c}"/>
-    <text x="${x + ancho / 2 + 6}" y="${y + alto * 0.74}" text-anchor="middle" font-family="${FUENTE}" font-weight="700" font-size="${alto * 0.68}" fill="${premier == null ? "#8a949c" : "#ffffff"}">${premierTexto(premier)}</text>
+    <text x="${x + ancho / 2 + 6}" y="${y + alto * (premier == null ? 0.66 : 0.74)}" text-anchor="middle" font-family="${FUENTE}" font-weight="700" font-size="${alto * (premier == null ? 0.44 : 0.68)}" letter-spacing="${premier == null ? 2 : 0}" fill="${premier == null ? "#8a949c" : "#ffffff"}">${premierTexto(premier)}</text>
   </g>`;
 }
 
@@ -73,6 +73,24 @@ function faceit(x, y, nivel, elo, r = 19) {
   </g>`;
 }
 
+// ▲ +322 en verde, ▼ −150 en rojo. Sin dato o sin cambio, nada.
+function cambio(x, y, delta, tamaño = 30, ancla = "end") {
+  if (!delta) return "";
+  const sube = delta > 0;
+  return `<text x="${x}" y="${y}" text-anchor="${ancla}" font-family="${FUENTE}" font-weight="700" font-size="${tamaño}" fill="${sube ? "#4dff88" : "#ff5c5c"}">${sube ? "▲" : "▼"} ${sube ? "+" : "−"}${miles(Math.abs(delta))}</text>`;
+}
+
+// 4. Aim · HS · winrate, para el espacio de abajo de las tarjetas del podio
+function miniStats(cx, y, j) {
+  const partes = [
+    j.aim != null && `AIM <tspan fill="#ffffff">${Math.round(j.aim)}</tspan>`,
+    j.hs != null && `HS <tspan fill="#ffffff">${Math.round(j.hs)}%</tspan>`,
+    j.winrate != null && `WR <tspan fill="#ffffff">${Math.round(j.winrate * 100)}%</tspan>`,
+  ].filter(Boolean);
+  if (!partes.length) return "";
+  return `<text x="${cx}" y="${y}" text-anchor="middle" font-family="${FUENTE}" font-weight="600" font-size="23" letter-spacing="1" fill="#8fb39d">${partes.join('<tspan fill="#5f9a76" font-weight="700"> · </tspan>')}</text>`;
+}
+
 function avatar(id, cx, cy, r, color, dataUrl) {
   const relleno = dataUrl
     ? `<image href="${dataUrl}" x="${cx - r}" y="${cy - r}" width="${r * 2}" height="${r * 2}" clip-path="url(#av-${id})" preserveAspectRatio="xMidYMid slice"/>`
@@ -82,7 +100,7 @@ function avatar(id, cx, cy, r, color, dataUrl) {
     ${relleno}`;
 }
 
-function tarjetaPodio(j, puesto, cx, base, alto, avatares) {
+function tarjetaPodio(j, puesto, cx, base, alto, avatares, cambios) {
   const ancho = 300;
   const x = cx - ancho / 2;
   const y = base - alto;
@@ -98,19 +116,22 @@ function tarjetaPodio(j, puesto, cx, base, alto, avatares) {
     <rect x="${x}" y="${y}" width="${ancho}" height="8" rx="4" fill="${color}"/>
     ${corona}
     <text x="${x + 22}" y="${y + 52}" font-family="${FUENTE}" font-weight="700" font-size="44" fill="${color}">#${puesto}</text>
+    ${cambio(x + ancho - 20, y + 48, cambios[j.usuarioId], 28)}
     ${avatar(`p${puesto}`, cx, cyAv, r, colorPremier(j.premier), avatares[j.usuarioId])}
     <text x="${cx}" y="${cyAv + r + 48}" text-anchor="middle" font-family="${FUENTE}" font-weight="700" font-size="36" fill="#ffffff">${escapar(cortar(j.nombre, 14))}</text>
     ${chapa(cx - 95, cyAv + r + 66, j.premier, 50, 190)}
     ${faceit(cx - 70, cyAv + r + 152, j.faceit, j.faceitElo)}
+    ${miniStats(cx, cyAv + r + 205, j)}
   </g>`;
 }
 
-function fila(j, puesto, y, avatares) {
+function fila(j, puesto, y, avatares, cambios) {
   return `<g>
     <rect x="40" y="${y}" width="${ANCHO - 80}" height="62" rx="14" fill="#ffffff" fill-opacity="${puesto % 2 ? 0.035 : 0.06}"/>
     <text x="78" y="${y + 42}" text-anchor="middle" font-family="${FUENTE}" font-weight="700" font-size="30" fill="#7fe0a5">#${puesto}</text>
     ${avatar(`f${puesto}`, 150, y + 31, 22, colorPremier(j.premier), avatares[j.usuarioId])}
     <text x="192" y="${y + 41}" font-family="${FUENTE}" font-weight="700" font-size="30" fill="#ffffff">${escapar(cortar(j.nombre, 22))}</text>
+    ${cambio(668, y + 42, cambios[j.usuarioId], 26)}
     ${chapa(690, y + 9, j.premier, 44, 175)}
     ${faceit(930, y + 31, j.faceit, j.faceitElo, 17)}
   </g>`;
@@ -129,10 +150,10 @@ function destacados(jugadores) {
   ].filter(([, j]) => j);
 }
 
-export function svgRanking(jugadores, { semana = null, avatares = {} } = {}) {
+export function svgRanking(jugadores, { semana = null, avatares = {}, cambios = {} } = {}) {
   const top = jugadores.slice(0, 3);
   const resto = jugadores.slice(3, 15);
-  const altoPodio = top.length ? 390 : 0;
+  const altoPodio = top.length ? 425 : 0;
   const inicioFilas = 200 + altoPodio + 20;
   const finFilas = inicioFilas + resto.length * 72;
   const items = destacados(jugadores);
@@ -142,11 +163,11 @@ export function svgRanking(jugadores, { semana = null, avatares = {} } = {}) {
   // Podio: el 1 al medio y más alto, el 2 a la izquierda, el 3 a la derecha
   const base = 200 + altoPodio;
   const lugares = [
-    [600, 385],
-    [270, 345],
-    [930, 330],
+    [600, 415],
+    [270, 385],
+    [930, 375],
   ];
-  const podio = top.map((j, i) => tarjetaPodio(j, i + 1, lugares[i][0], base, lugares[i][1], avatares)).join("");
+  const podio = top.map((j, i) => tarjetaPodio(j, i + 1, lugares[i][0], base, lugares[i][1], avatares, cambios)).join("");
 
   const lider = semana?.actual;
   const chipSemana = lider
@@ -194,7 +215,7 @@ export function svgRanking(jugadores, { semana = null, avatares = {} } = {}) {
   <text x="36" y="150" font-family="${FUENTE}" font-weight="700" font-size="88" letter-spacing="3" fill="url(#titulo)">RANKING CS2</text>
   ${chipSemana}
   ${podio}
-  ${resto.map((j, i) => fila(j, i + 4, inicioFilas + i * 72, avatares)).join("")}
+  ${resto.map((j, i) => fila(j, i + 4, inicioFilas + i * 72, avatares, cambios)).join("")}
   ${cajas}
   <rect x="0" y="${ALTO - 6}" width="${ANCHO}" height="6" fill="${VERDE}"/>
 </svg>`;
