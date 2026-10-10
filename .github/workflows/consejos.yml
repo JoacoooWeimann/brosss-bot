@@ -50,4 +50,5 @@ jobs:
           ROL_CHAT: ${{ vars.ROL_CHAT || secrets.ROL_CHAT }}
           ROL_VOZ: ${{ vars.ROL_VOZ || secrets.ROL_VOZ }}
           CATEGORIAS_CHAT: ${{ vars.CATEGORIAS_CHAT }}
+          CANALES_EXCLUIDOS: ${{ vars.CANALES_EXCLUIDOS }}
           PREMIOS_PRUEBA: ${{ inputs.premios_prueba }}

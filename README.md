@@ -44,7 +44,7 @@ DISBOARD deja bumpear cada 2 horas, y solo con `/bump` hecho por una persona: un
 
 ### 🏆 Premios de la semana (#premios)
 Los viernes a las 12, con los consejos:
-- **💬 Más activo en el chat:** mensajes de los últimos 7 días en los canales de las categorías COMUNIDAD y COUNTER (se buscan por nombre; para otras, variable `CATEGORIAS_CHAT`). Los mensajes seguidos de la misma persona en menos de 5 segundos cuentan como uno, y no cuentan los bots.
+- **💬 Más activo en el chat:** mensajes de los últimos 7 días en los canales de las categorías COMUNIDAD y COUNTER (se buscan por nombre; para otras, variable `CATEGORIAS_CHAT`), salvo #comandos y #vincular, que no son charla (variable `CANALES_EXCLUIDOS`). Los mensajes seguidos de la misma persona en menos de 5 segundos cuentan como uno, y no cuentan los bots.
 - **🎙️ Más activo en voz:** el bot no queda conectado, así que cada 5 minutos (workflow **Voz**, `voz.yml`) se conecta un instante al gateway, mira quién está en voz y le suma 5 minutos. Si se lanza dos veces seguidas, la segunda no suma. No cuenta el canal de AFK, estar solo (o solo con bots) ni estar ensordecido. Los minutos van en `datos/voz.json`.
 - Podio de 3 en cada uno. Con `ROL_CHAT` y `ROL_VOZ`, las medallas pasan solas al nuevo ganador (el bot necesita **Gestionar roles** y estar más arriba que esos roles).
 - La foto de voz solo se toma si está `CANAL_PREMIOS`. En cron-job.org va una tarea aparte para `voz.yml`, cada 5 minutos.
@@ -97,6 +97,7 @@ En este repositorio → **Settings → Secrets and variables → Actions**:
 | Variables (o Secrets) | `CANAL_PREMIOS` | ID de #premios (chat y voz de la semana) |
 | Variables (o Secrets) | `ROL_CHAT` | *(opcional)* ID de la medalla del más activo en el chat |
 | Variables (o Secrets) | `ROL_VOZ` | *(opcional)* ID de la medalla del más activo en voz |
+| Variables | `CANALES_EXCLUIDOS` | *(opcional)* canales que no cuentan para el chat (por defecto `comandos,vincular`) |
 | Variables | `CATEGORIAS_CHAT` | *(opcional)* categorías que cuentan para el chat (por defecto `COMUNIDAD,COUNTER`) |
 | Variables (o Secrets) | `CANAL_TIPS` | ID de #tips (para los consejos) |
 

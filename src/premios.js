@@ -22,16 +22,21 @@ const VOZ = "🎙️ Más activo en voz";
 const MEDALLAS = ["🥇", "🥈", "🥉"];
 // Categorías que cuentan para el chat (por nombre); se puede cambiar con CATEGORIAS_CHAT
 export const CATEGORIAS = ["COMUNIDAD", "COUNTER"];
+// Canales que no son charla (se buscan por nombre); se puede cambiar con CANALES_EXCLUIDOS
+export const EXCLUIDOS = ["comandos", "vincular"];
 
 const fechaDeMensaje = (id) => Number((BigInt(id) >> 22n) + 1420070400000n);
 
 // Canales de texto (y de anuncios) dentro de esas categorías
-export function canalesDeChat(canales, categorias = CATEGORIAS) {
+export function canalesDeChat(canales, categorias = CATEGORIAS, excluidos = EXCLUIDOS) {
   const buscadas = categorias.map((c) => c.toUpperCase());
+  const fuera = excluidos.map((c) => c.toLowerCase());
   const ids = new Set(
     canales.filter((c) => c.type === 4 && buscadas.some((n) => String(c.name).toUpperCase().includes(n))).map((c) => c.id)
   );
-  return canales.filter((c) => (c.type === 0 || c.type === 5) && ids.has(c.parent_id));
+  return canales.filter(
+    (c) => (c.type === 0 || c.type === 5) && ids.has(c.parent_id) && !fuera.some((n) => String(c.name).toLowerCase().includes(n))
+  );
 }
 
 // Mensajes por persona, sin bots y con las ráfagas juntadas
@@ -114,13 +119,13 @@ async function pasarMedalla(cliente, servidor, rol, anterior, nuevo) {
 }
 
 // prueba: cuenta todo pero no publica ni toca roles (para revisar en el log)
-export async function ejecutarPremios({ cliente, canalPremios, rolChat, rolVoz, categorias, registroVoz, ahora = Date.now(), prueba = false }) {
+export async function ejecutarPremios({ cliente, canalPremios, rolChat, rolVoz, categorias, excluidos, registroVoz, ahora = Date.now(), prueba = false }) {
   const yo = await cliente.yo();
   const previos = anunciosPrevios(await cliente.mensajes(canalPremios, 50), { botId: yo.id, ahora });
   if (previos.yaAnunciado && !prueba) return { estado: "repetido" };
 
   const { guild_id: servidor } = await cliente.canal(canalPremios);
-  const canales = canalesDeChat(await cliente.canalesDelServidor(servidor), categorias);
+  const canales = canalesDeChat(await cliente.canalesDelServidor(servidor), categorias, excluidos);
   const mensajesPorCanal = [];
   for (const c of canales) {
     try {
@@ -149,13 +154,16 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.log("Sin DISCORD_TOKEN o CANAL_PREMIOS: no hay premios de la semana.");
     process.exit(0);
   }
-  const categorias = (process.env.CATEGORIAS_CHAT ?? "").split(",").map((c) => c.trim()).filter(Boolean);
+  const lista = (v) => (v ?? "").split(",").map((c) => c.trim()).filter(Boolean);
+  const categorias = lista(process.env.CATEGORIAS_CHAT);
+  const excluidos = lista(process.env.CANALES_EXCLUIDOS);
   const r = await ejecutarPremios({
     cliente: crearCliente(DISCORD_TOKEN),
     canalPremios: CANAL_PREMIOS,
     rolChat: idDeCanal(process.env.ROL_CHAT),
     rolVoz: idDeCanal(process.env.ROL_VOZ),
     categorias: categorias.length ? categorias : undefined,
+    excluidos: excluidos.length ? excluidos : undefined,
     registroVoz: await voz.leer(),
     prueba: process.env.PREMIOS_PRUEBA === "true",
   });

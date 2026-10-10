@@ -72,13 +72,16 @@ test("con vueltas de 15 suma 15, y al cambiar de semana guarda la anterior", () 
 
 // ---------- Chat ----------
 
-test("canales de chat: solo los de texto dentro de COMUNIDAD y COUNTER", () => {
+test("canales de chat: solo los de texto dentro de COMUNIDAD y COUNTER, sin comandos ni vincular", () => {
   const canales = [
     { id: "cat1", type: 4, name: "『💬』 COMUNIDAD" }, { id: "cat2", type: 4, name: "『🔘』COUNTER" }, { id: "cat3", type: 4, name: "『🛡』 STAFF" },
-    { id: "general", type: 0, parent_id: "cat1" }, { id: "cs", type: 0, parent_id: "cat2" },
-    { id: "staff", type: 0, parent_id: "cat3" }, { id: "voz", type: 2, parent_id: "cat1" }, { id: "suelto", type: 0 },
+    { id: "general", type: 0, parent_id: "cat1", name: "💬・general" }, { id: "cs", type: 0, parent_id: "cat2", name: "💣・conter" },
+    { id: "cmd", type: 0, parent_id: "cat1", name: "🤖・comandos" }, { id: "vin", type: 0, parent_id: "cat2", name: "🔗・vincular" },
+    { id: "staff", type: 0, parent_id: "cat3", name: "registro" }, { id: "voz", type: 2, parent_id: "cat1" }, { id: "suelto", type: 0 },
   ];
+  // comandos y vincular no son charla
   assert.deepEqual(canalesDeChat(canales).map((c) => c.id), ["general", "cs"]);
+  assert.deepEqual(canalesDeChat(canales, undefined, []).map((c) => c.id), ["general", "cs", "cmd", "vin"]);
   assert.deepEqual(canalesDeChat(canales, ["staff"]).map((c) => c.id), ["staff"]);
 });
 
