@@ -17,7 +17,8 @@ import { registrosDesdeMensajes, OK, ERROR, MOTIVOS } from "./vincular.js";
 import { armarEmbed, embedConImagen, ordenar } from "./ranking.js";
 import { svgRanking, renderizar, huella, cargarAvatares } from "./ranking-imagen.js";
 import * as semana from "./semana.js";
-import { consultarPartidas, agrupar, embedPartida, yaPublicadas } from "./partidas.js";
+import { consultarPartidas, consultarDetalle, agrupar, embedPartida, embedPartidaConImagen, yaPublicadas } from "./partidas.js";
+import { svgPartida } from "./partida-imagen.js";
 import { consultarTiktok, videosNuevos, mensajeVideo } from "./tiktok.js";
 import { revisarBump, mensajeBump } from "./bump.js";
 import { publicadosAntes, tocaPublicar, buscarMeme, mensajeMeme, SUBREDDITS } from "./memes.js";
@@ -67,7 +68,27 @@ async function enTandas(items, tamaño, fn) {
 
 // Publica en #historial las partidas nuevas de los registrados.
 // Si algo falla, no frena el ranking: se reintenta en la próxima vuelta.
-async function publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, jugadores, botId, ahora }) {
+// Una partida: la tabla completa en imagen (los 10 jugadores) o, si
+// Leetify no la da o no se puede dibujar, el resumen de texto
+async function publicarPartida({ cliente, pedir, canalHistorial, claveLeetify, partida, jugadores, conImagen }) {
+  if (conImagen) {
+    try {
+      const detalle = await consultarDetalle(partida.id, pedir, claveLeetify);
+      const archivo = `partida-${partida.id}.png`;
+      const png = await renderizar(svgPartida(detalle, jugadores));
+      return await cliente.enviarConArchivos(
+        canalHistorial,
+        { embeds: [embedPartidaConImagen(partida, archivo)], allowed_mentions: { parse: [] } },
+        [{ nombre: archivo, datos: png }]
+      );
+    } catch (error) {
+      console.warn(`Historial: partida ${partida.id} sin imagen (${error.message})`);
+    }
+  }
+  return cliente.enviar(canalHistorial, { embeds: [embedPartida(partida)], allowed_mentions: { parse: [] } });
+}
+
+async function publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, jugadores, botId, ahora, conImagen }) {
   try {
     const publicadas = yaPublicadas(await cliente.mensajes(canalHistorial, 100), botId);
     const partidasPorJugador = await enTandas(jugadores, EN_PARALELO, async (jugador) => ({
@@ -75,7 +96,7 @@ async function publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, 
       partidas: await consultarPartidas(jugador.steamId, pedir, claveLeetify),
     }));
     const nuevas = agrupar(partidasPorJugador, { ahora, publicadas });
-    for (const p of nuevas) await cliente.enviar(canalHistorial, { embeds: [embedPartida(p)], allowed_mentions: { parse: [] } });
+    for (const p of nuevas) await publicarPartida({ cliente, pedir, canalHistorial, claveLeetify, partida: p, jugadores, conImagen });
     return nuevas.length;
   } catch (error) {
     console.warn(`Historial: ${error.message}`);
@@ -267,7 +288,7 @@ export async function ejecutar({
   await publicarRanking({ cliente, pedir, canalRanking, canalVincular, propio, jugadores, datosSemana, ahora, conImagen });
 
   const partidas = canalHistorial
-    ? await publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, jugadores, botId: yo.id, ahora })
+    ? await publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, jugadores, botId: yo.id, ahora, conImagen })
     : 0;
 
   const tiktok = canalClips || canalRedes ? await videosTiktok(usuarioTiktok, pedir) : null;

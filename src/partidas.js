@@ -31,6 +31,15 @@ export function nombreMapa(mapa) {
   return sin ? sin[0].toUpperCase() + sin.slice(1) : "Mapa desconocido";
 }
 
+// La partida completa: los 10 jugadores con sus stats
+export async function consultarDetalle(id, pedir, clave) {
+  const res = await pedir(`${LEETIFY}/v2/matches/${encodeURIComponent(id)}`, clave ? { _leetify_key: clave } : {});
+  if (!res.ok) throw new Error(`Leetify (partida) respondió ${res.status}`);
+  const detalle = await res.json();
+  if (!Array.isArray(detalle?.stats) || !detalle.stats.length) throw new Error("Leetify no trajo los jugadores de la partida");
+  return detalle;
+}
+
 export async function consultarPartidas(steamId, pedir, clave) {
   const res = await pedir(`${LEETIFY}/v3/profile/matches?steam64_id=${steamId}`, clave ? { _leetify_key: clave } : {});
   if (res.status === 404) return [];
@@ -102,4 +111,19 @@ export function embedPartida(partida) {
 // Los links de partidas que el bot ya publicó en el canal
 export function yaPublicadas(mensajes, botId) {
   return new Set(mensajes.filter((m) => m.author?.id === botId).flatMap((m) => (m.embeds ?? []).map((e) => e.url).filter(Boolean)));
+}
+
+// Con la imagen de la partida completa: el embed solo lleva el
+// resultado, quiénes del server jugaron y la imagen adjunta
+export function embedPartidaConImagen(partida, archivo) {
+  const base = embedPartida(partida);
+  const jugaron = partida.jugadores.map((j) => `**${j.nombre}**`).join(", ");
+  return {
+    title: base.title,
+    url: base.url,
+    description: `${base.description}\nJugaron: ${jugaron}`,
+    color: base.color,
+    image: { url: `attachment://${archivo}` },
+    footer: base.footer,
+  };
 }
