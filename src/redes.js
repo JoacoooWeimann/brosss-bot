@@ -22,9 +22,9 @@ const WEB = "https://brosssdiscord.netlify.app";
 // mismo nombre (aunque cambie un ?v=) pueden seguir mostrando la vieja.
 const ASSETS = "https://raw.githubusercontent.com/JoacoooWeimann/brosss-bot/main/assets";
 const VERSION = 3;
-const imagen = (nombre) => `${ASSETS}/${nombre}-v${VERSION}.png`;
+const imagen = (nombre, version = VERSION) => `${ASSETS}/${nombre}-v${version}.png`;
 export const IMAGENES = {
-  banner: imagen("banner"),
+  banner: imagen("banner", 4),
   web: imagen("web"),
   tiktok: imagen("tiktok"),
   kick: imagen("kick"),
