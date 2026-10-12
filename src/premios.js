@@ -137,7 +137,15 @@ export async function ejecutarPremios({ cliente, canalPremios, rolChat, rolVoz, 
   const chat = top(contarMensajes(mensajesPorCanal, { ahora }));
   // En prueba se ve la semana en curso (la que todavía no terminó)
   const enVoz = top(prueba ? (registroVoz?.minutos ?? {}) : voz.semanaParaPremios(registroVoz, ahora));
-  if (prueba) return { estado: "prueba", canales: canales.map((c) => c.name), chat, voz: enVoz };
+  // En prueba se muestra el top 10 (en el anuncio van 3)
+  if (prueba) {
+    return {
+      estado: "prueba",
+      canales: canales.map((c) => c.name),
+      chat: top(contarMensajes(mensajesPorCanal, { ahora }), 10),
+      voz: top(registroVoz?.minutos ?? {}, 10),
+    };
+  }
 
   await cliente.enviar(canalPremios, mensajePremios({ chat, voz: enVoz, rolChat, rolVoz }));
   await pasarMedalla(cliente, servidor, rolChat, previos.chatAnterior, chat[0]?.[0]);
@@ -168,9 +176,21 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     prueba: process.env.PREMIOS_PRUEBA === "true",
   });
   if (r.estado === "prueba") {
+    // Con nombres, para leer el log fácil (si no se puede, el ID)
+    const cliente = crearCliente(DISCORD_TOKEN);
+    const nombre = async (id) => {
+      try {
+        const u = await cliente.usuario(id);
+        return u.global_name || u.username;
+      } catch {
+        return id;
+      }
+    };
+    const linea = async (lista, formato) =>
+      (await Promise.all(lista.map(async ([u, v], i) => `${i + 1}. ${await nombre(u)} (${formato(v)})`))).join(" · ") || "nadie";
     console.log(`PRUEBA (no se publicó nada). Canales de chat: ${r.canales.join(", ") || "ninguno"}`);
-    console.log(`Chat: ${r.chat.map(([u, n]) => `${u}=${n}`).join(", ") || "nadie"}`);
-    console.log(`Voz: ${r.voz.map(([u, m]) => `${u}=${horas(m)}`).join(", ") || "nadie"}`);
+    console.log(`Chat: ${await linea(r.chat, (n) => `${n} mensajes`)}`);
+    console.log(`Voz: ${await linea(r.voz, horas)}`);
     process.exit(0);
   }
   console.log(
