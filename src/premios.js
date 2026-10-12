@@ -10,7 +10,7 @@
 
 import { fileURLToPath } from "node:url";
 import { crearCliente } from "./discord.js";
-import { idDeCanal } from "./index.js";
+import { idDeCanal } from "./ids.js";
 import * as voz from "./voz.js";
 
 const SEMANA_MS = 7 * 24 * 60 * 60 * 1000;

@@ -11,6 +11,7 @@
 // =============================================================
 
 import { fileURLToPath } from "node:url";
+import { idDeCanal } from "./ids.js";
 import { crearCliente } from "./discord.js";
 import { resolverSteamId } from "./steam.js";
 import { consultarLeetify } from "./leetify.js";
@@ -318,7 +319,7 @@ export async function ejecutar({
 export const crearPedir = () => (url, cabeceras = {}) =>
   fetch(url, { headers: cabeceras, signal: AbortSignal.timeout(ESPERA_MAXIMA_MS) });
 
-export const idDeCanal = (valor) => /\d{17,20}/.exec(String(valor ?? ""))?.[0] ?? "";
+export { idDeCanal } from "./ids.js";
 
 // ---------- Arranque (cuando se corre con `node src/index.js`) ----------
 

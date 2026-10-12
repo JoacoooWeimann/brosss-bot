@@ -5,7 +5,7 @@
 // =============================================================
 
 import { crearCliente } from "./discord.js";
-import { idDeCanal } from "./index.js";
+import { idDeCanal } from "./ids.js";
 import * as voz from "./voz.js";
 
 const { DISCORD_TOKEN } = process.env;
