@@ -7,6 +7,7 @@
 //   4. Edita el mensaje del ranking en #ranking (o lo crea).
 //   5. Lo opcional, cada parte por su lado (si una falla, sigue):
 //      #historial, #clips, #bumpeador, #memes, #streams y #redes.
+//   6. Guarda los clips de TikTok para la página web (datos/clips.json).
 // =============================================================
 
 import { fileURLToPath } from "node:url";
@@ -25,6 +26,7 @@ import { publicadosAntes, tocaPublicar, buscarMeme, mensajeMeme, SUBREDDITS } fr
 import { cargarConfigWeb, juntarStreamers, consultarCanal } from "./kick.js";
 import { alertasPrevias, revisarStreams, mensajeEnVivo, embedTerminado } from "./streams.js";
 import { embedsRedes, consultarStats, hayCambios, TITULO as TITULO_REDES } from "./redes.js";
+import { actualizarClipsWeb } from "./clips-web.js";
 
 const ESPERA_MAXIMA_MS = 8000;
 const EN_PARALELO = 4; // para no saturar a Leetify
@@ -308,6 +310,8 @@ export async function ejecutar({
   return {
     registrados: registros.length, enRanking: jugadores.length, partidas, clips, bump, meme, streams,
     historial: historialNuevo,
+    // Los videos de TikTok ya consultados: el arranque los guarda para la web
+    videosTiktok: tiktok?.videos ?? null,
   };
 }
 
@@ -369,8 +373,14 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     historial,
   });
   const cambio = await semana.guardar(resumen.historial, historial);
+  // Clips para la página web: si falla, el resto ya se hizo
+  const web = await actualizarClipsWeb({
+    videos: resumen.videosTiktok,
+    usuario: process.env.TIKTOK_USUARIO || "brosss.clips",
+    pedir,
+  }).catch((error) => (console.warn(`Clips web: ${error.message}`), { cambio: false, portadas: 0 }));
   console.log(
     `Listo: ${resumen.enRanking} de ${resumen.registrados} jugadores en el ranking, ` +
-      `${resumen.partidas} partidas nuevas en el historial, ${resumen.clips} clips nuevos${resumen.bump ? ", recordatorio de bump enviado" : ""}${resumen.meme ? ", meme publicado" : ""}${resumen.streams ? `, ${resumen.streams} alertas de stream` : ""}${cambio ? ", historial de la semana actualizado" : ""}.`
+      `${resumen.partidas} partidas nuevas en el historial, ${resumen.clips} clips nuevos${resumen.bump ? ", recordatorio de bump enviado" : ""}${resumen.meme ? ", meme publicado" : ""}${resumen.streams ? `, ${resumen.streams} alertas de stream` : ""}${cambio ? ", historial de la semana actualizado" : ""}${web.cambio ? `, clips de la web actualizados (${web.portadas} portadas nuevas)` : ""}.`
   );
 }

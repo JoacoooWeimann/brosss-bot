@@ -70,6 +70,8 @@ export function leerVideos(html) {
       titulo: limpiarTitulo(v.desc),
       fecha: fechaDeId(v.id),
       vistas: Number.isFinite(v.playCount) ? v.playCount : null,
+      // Link a la imagen de portada (vence en unas horas: clips-web.js la guarda)
+      portadaUrl: [v.originCoverUrl, v.coverUrl].find((u) => typeof u === "string" && u.startsWith("https://")) ?? null,
     }));
 }
 

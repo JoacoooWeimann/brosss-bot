@@ -54,14 +54,14 @@ jobs:
           ROL_STREAM: ${{ vars.ROL_STREAM || secrets.ROL_STREAM }}
           KICK_EXTRA: ${{ vars.KICK_EXTRA }}
           CANAL_PREMIOS: ${{ vars.CANAL_PREMIOS || secrets.CANAL_PREMIOS }}
-      # Si cambiaron los datos de la semana (ranking y voz), los guarda en el repo
+      # Si cambiaron los datos (semana, voz o los clips de la web), los guarda en el repo
       - name: Guardar historial
         run: |
           if [ -n "$(git status --porcelain datos)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add datos
-            git commit -m "Datos de la semana"
+            git commit -m "Datos del bot"
             git pull --rebase
             git push
           fi

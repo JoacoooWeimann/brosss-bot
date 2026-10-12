@@ -26,6 +26,8 @@ Cada 15 minutos revisa la cuenta **@brosss.clips** y publica en **#clips** los v
 
 TikTok no tiene API pública: el bot lee la página de "embed de creador". Si TikTok la cambia o la bloquea, el ranking sigue andando y el log de Actions muestra `Clips: …`. Es opcional: sin `CANAL_CLIPS` se saltea. Para usar otra cuenta, agregá la variable `TIKTOK_USUARIO`.
 
+**Para la página web:** con esos mismos videos arma `datos/clips.json` y guarda la portada de cada uno en `datos/portadas/{id}.webp` (los links de imagen de TikTok vencen en horas, por eso se bajan apenas aparece el clip). La página [brosssdiscord.netlify.app](https://brosssdiscord.netlify.app/) lee ese archivo al abrirse, así que un clip nuevo aparece solo en el carrusel, sin volver a publicarla. Se reescribe solo cuando hay un clip o una portada nueva (las vistas no se guardan, para no commitear cada 15 minutos). **No lo borres ni lo muevas:** la página lo busca en esa ruta.
+
 ### ⏰ Recordatorio de bump (#bumpeador)
 DISBOARD deja bumpear cada 2 horas, y solo con `/bump` hecho por una persona: un bot no puede, y automatizarlo con una cuenta personal va contra las reglas de Discord y DISBOARD. El bot lee el último bump en el canal y, cuando pasan las 2 horas, avisa una sola vez (mencionando el rol de `ROL_BUMP`, si está). Cuando alguien bumpea, borra el aviso viejo. Como corre cada 15 minutos, el aviso puede llegar hasta 15 minutos tarde.
 
