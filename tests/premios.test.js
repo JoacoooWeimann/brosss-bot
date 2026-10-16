@@ -61,8 +61,8 @@ test("con vueltas de 15 suma 15, y al cambiar de semana guarda la anterior", () 
   assert.deepEqual(r.minutos, { a: 30, b: 15 });
   // Viernes 12:30: la semana ya terminó pero la voz todavía no la cerró → usa la que está
   assert.deepEqual(semanaParaPremios(r, Date.parse("2026-10-09T15:30:00Z")), { a: 30, b: 15 });
-  // Antes del viernes a las 12, la última terminada es la anterior (acá no hay)
-  assert.deepEqual(semanaParaPremios(r, Date.parse("2026-10-09T14:00:00Z")), {});
+  // El viernes antes de las 12 la semana está casi completa: usa esa (antes salía vacía)
+  assert.deepEqual(semanaParaPremios(r, Date.parse("2026-10-09T14:00:00Z")), { a: 30, b: 15 });
   r = sumar(r, ["c"], sabado, 15);
   assert.deepEqual(r.minutos, { c: 15 });
   assert.deepEqual(r.anterior.minutos, { a: 30, b: 15 });
@@ -154,4 +154,21 @@ test("modo prueba: cuenta pero no publica ni toca roles, aunque ya haya anuncio"
   const r = await ejecutarPremios({ cliente, canalPremios: "p", rolChat: "rc", registroVoz: { minutos: { 9: 20 } }, ahora, prueba: true });
   assert.deepEqual(r, { estado: "prueba", canales: ["general-conter"], chat: [["7", 1]], voz: [["9", 20]] });
   assert.deepEqual(acciones, []);
+});
+
+test("las tareas del viernes solo publican entre el viernes a las 12 y el sábado a las 12", async () => {
+  const { enVentanaDelViernes, esDeEstaSemana } = await import("../src/semana.js");
+  assert.equal(enVentanaDelViernes(Date.parse("2026-10-16T15:05:00Z")), true); // viernes 12:05
+  assert.equal(enVentanaDelViernes(Date.parse("2026-10-17T14:59:00Z")), true); // sábado 11:59
+  assert.equal(enVentanaDelViernes(Date.parse("2026-10-16T12:01:00Z")), false); // viernes 9:01
+  assert.equal(enVentanaDelViernes(Date.parse("2026-10-12T21:53:00Z")), false); // lunes
+  // Lo publicado el lunes no cuenta como "ya publicado" el viernes
+  assert.equal(esDeEstaSemana(Date.parse("2026-10-12T21:53:00Z"), Date.parse("2026-10-16T15:05:00Z")), false);
+  assert.equal(esDeEstaSemana(Date.parse("2026-10-16T15:01:00Z"), Date.parse("2026-10-16T15:05:00Z")), true);
+});
+
+test("fuera de horario no publica nada (salvo forzado)", async () => {
+  const lunes = Date.parse("2026-10-12T21:53:00Z");
+  const r = await ejecutarPremios({ cliente: {}, canalPremios: "p", ahora: lunes });
+  assert.deepEqual(r, { estado: "fuera-de-horario" });
 });

@@ -12,9 +12,9 @@ import { fileURLToPath } from "node:url";
 import { crearCliente } from "./discord.js";
 import { idDeCanal } from "./ids.js";
 import * as voz from "./voz.js";
+import { enVentanaDelViernes, esDeEstaSemana } from "./semana.js";
 
 const SEMANA_MS = 7 * 24 * 60 * 60 * 1000;
-const MINIMO_ENTRE_ENVIOS_MS = 5 * 24 * 60 * 60 * 1000;
 const RAFAGA_MS = 5000; // mensajes seguidos en menos de 5 s cuentan como uno
 const TITULO = "🏆 Premios de la semana";
 const CHAT = "💬 Más activo en el chat";
@@ -106,7 +106,7 @@ export function anunciosPrevios(mensajes, { botId, ahora }) {
     return campo ? (/^🥇 <@!?(\d+)>/.exec(campo.value)?.[1] ?? null) : null;
   };
   return {
-    yaAnunciado: Boolean(ultimo && ahora - fechaDeMensaje(ultimo.id) < MINIMO_ENTRE_ENVIOS_MS),
+    yaAnunciado: Boolean(ultimo && esDeEstaSemana(fechaDeMensaje(ultimo.id), ahora)),
     chatAnterior: ganadorDe(CHAT),
     vozAnterior: ganadorDe(VOZ),
   };
@@ -119,7 +119,8 @@ async function pasarMedalla(cliente, servidor, rol, anterior, nuevo) {
 }
 
 // prueba: cuenta todo pero no publica ni toca roles (para revisar en el log)
-export async function ejecutarPremios({ cliente, canalPremios, rolChat, rolVoz, categorias, excluidos, registroVoz, ahora = Date.now(), prueba = false }) {
+export async function ejecutarPremios({ cliente, canalPremios, rolChat, rolVoz, categorias, excluidos, registroVoz, ahora = Date.now(), prueba = false, forzar = false }) {
+  if (!prueba && !forzar && !enVentanaDelViernes(ahora)) return { estado: "fuera-de-horario" };
   const yo = await cliente.yo();
   const previos = anunciosPrevios(await cliente.mensajes(canalPremios, 50), { botId: yo.id, ahora });
   if (previos.yaAnunciado && !prueba) return { estado: "repetido" };
@@ -174,6 +175,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     excluidos: excluidos.length ? excluidos : undefined,
     registroVoz: await voz.leer(),
     prueba: process.env.PREMIOS_PRUEBA === "true",
+    forzar: process.env.FORZAR === "true",
   });
   if (r.estado === "prueba") {
     // Con nombres, para leer el log fácil (si no se puede, el ID)
@@ -191,6 +193,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.log(`PRUEBA (no se publicó nada). Canales de chat: ${r.canales.join(", ") || "ninguno"}`);
     console.log(`Chat: ${await linea(r.chat, (n) => `${n} mensajes`)}`);
     console.log(`Voz: ${await linea(r.voz, horas)}`);
+    process.exit(0);
+  }
+  if (r.estado === "fuera-de-horario") {
+    console.log("Fuera de horario: los premios salen entre el viernes a las 12 y el sábado a las 12.");
     process.exit(0);
   }
   console.log(

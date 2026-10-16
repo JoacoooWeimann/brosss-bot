@@ -12,10 +12,10 @@
 import { fileURLToPath } from "node:url";
 import { crearCliente } from "./discord.js";
 import { idDeCanal } from "./ids.js";
+import { enVentanaDelViernes, esDeEstaSemana } from "./semana.js";
 
 export const EMOJIS = ["😂", "💀", "🤣"];
 const SEMANA_MS = 7 * 24 * 60 * 60 * 1000;
-const MINIMO_ENTRE_ENVIOS_MS = 5 * 24 * 60 * 60 * 1000; // igual que los consejos
 const TITULO = "Meme de la semana";
 const FINALISTAS = 5; // a los mejores se les cuentan las reacciones una por una
 
@@ -55,7 +55,7 @@ export function anunciosPrevios(mensajes, { botId, ahora }) {
     .sort((a, b) => fechaDeMensaje(b.id) - fechaDeMensaje(a.id));
   const ultimo = propios[0];
   return {
-    yaAnunciado: Boolean(ultimo && ahora - fechaDeMensaje(ultimo.id) < MINIMO_ENTRE_ENVIOS_MS),
+    yaAnunciado: Boolean(ultimo && esDeEstaSemana(fechaDeMensaje(ultimo.id), ahora)),
     ganadorAnterior: ultimo ? (/<@!?(\d+)>/.exec(ultimo.content)?.[1] ?? null) : null,
   };
 }
@@ -70,7 +70,8 @@ export function mensajeGanador(meme, puntos, rolId) {
   };
 }
 
-export async function ejecutarMemeSemana({ cliente, canalMemes, rolMeme, ahora = Date.now() }) {
+export async function ejecutarMemeSemana({ cliente, canalMemes, rolMeme, ahora = Date.now(), forzar = false }) {
+  if (!forzar && !enVentanaDelViernes(ahora)) return { estado: "fuera-de-horario" };
   const yo = await cliente.yo();
   const mensajes = await cliente.mensajes(canalMemes, 1000);
   const { yaAnunciado, ganadorAnterior } = anunciosPrevios(mensajes, { botId: yo.id, ahora });
@@ -112,10 +113,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     cliente: crearCliente(DISCORD_TOKEN),
     canalMemes: CANAL_MEMES,
     rolMeme: idDeCanal(process.env.ROL_MEME),
+    forzar: process.env.FORZAR === "true",
   });
   const textos = {
     ok: `Listo: meme de la semana de ${r.autor} con ${r.puntos} reacciones.`,
     repetido: "El meme de la semana ya estaba anunciado: no se repite.",
+    "fuera-de-horario": "Fuera de horario: el meme de la semana sale entre el viernes a las 12 y el sábado a las 12.",
     "sin-memes": "Esta semana no hubo memes con reacciones: no hay ganador.",
   };
   console.log(textos[r.estado]);

@@ -81,11 +81,14 @@ export function sumar(registro, usuarios, ahora, cada = MINUTOS_POR_VUELTA) {
 }
 
 // Los minutos de la semana que terminó (para los premios del viernes).
-// Si todavía no se cerró la semana, la que está en curso.
+// Si la semana en curso arrancó hace menos de media semana, la que terminó
+// es la anterior; si no (por ejemplo, el viernes antes de las 12), la que
+// está por terminar ya es la completa.
 export function semanaParaPremios(registro, ahora) {
   if (!registro) return {};
-  if (registro.semana === inicioSemana(ahora)) return registro.anterior?.minutos ?? {};
-  return registro.minutos ?? {};
+  const inicio = Date.parse(inicioSemana(ahora));
+  if (registro.semana !== inicioSemana(ahora)) return registro.minutos ?? {};
+  return ahora - inicio < 3.5 * 24 * 60 * 60 * 1000 ? (registro.anterior?.minutos ?? {}) : (registro.minutos ?? {});
 }
 
 export async function leer(archivo = ARCHIVO) {

@@ -26,6 +26,15 @@ export function inicioSemana(ahora) {
   return new Date(inicio).toISOString();
 }
 
+// Las tareas del viernes (consejos y premios) publican solo entre el
+// viernes a las 12 y el sábado a las 12. Si cron-job.org o alguien las
+// lanza otro día, no hacen nada (salvo que se fuercen a mano).
+const VENTANA_MS = 24 * 60 * 60 * 1000;
+export const enVentanaDelViernes = (ahora) => ahora - Date.parse(inicioSemana(ahora)) < VENTANA_MS;
+
+// ¿Esta fecha es de la semana actual (desde el último viernes a las 12)?
+export const esDeEstaSemana = (fecha, ahora) => fecha >= Date.parse(inicioSemana(ahora));
+
 // Quién más subió desde la base (solo cuenta si subió algo)
 export function lider(base, jugadores) {
   let mejor = null;

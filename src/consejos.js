@@ -11,23 +11,19 @@ import { fileURLToPath } from "node:url";
 import { crearCliente } from "./discord.js";
 import { registrosDesdeMensajes } from "./vincular.js";
 import { evaluar, idDeCanal, crearPedir } from "./index.js";
+import { enVentanaDelViernes, esDeEstaSemana } from "./semana.js";
 
 const VERDE = 0x22e36b;
 const POR_MENSAJE = 10; // un embed por jugador; Discord acepta hasta 10 por mensaje
 const TITULO = "Consejos de la semana";
-// Si ya los publicó hace menos de esto, no repite. El workflow lo pueden
-// lanzar cron-job.org, el reloj de GitHub (que se atrasa) o alguien a mano.
-const MINIMO_ENTRE_ENVIOS_MS = 5 * 24 * 60 * 60 * 1000;
 
 const fechaDeMensaje = (id) => Number((BigInt(id) >> 22n) + 1420070400000n);
 
-// ¿El bot ya publicó los consejos esta semana?
+// ¿El bot ya publicó los consejos esta semana (desde el viernes a las 12)?
+// El workflow lo pueden lanzar cron-job.org, el reloj de GitHub o alguien a mano.
 export function yaPublicados(mensajes, { botId, ahora }) {
   return mensajes.some(
-    (m) =>
-      m.author?.id === botId &&
-      String(m.content ?? "").includes(TITULO) &&
-      ahora - fechaDeMensaje(m.id) < MINIMO_ENTRE_ENVIOS_MS
+    (m) => m.author?.id === botId && String(m.content ?? "").includes(TITULO) && esDeEstaSemana(fechaDeMensaje(m.id), ahora)
   );
 }
 
@@ -156,7 +152,8 @@ export function armarMensajes(jugadores, { canalVincular } = {}) {
   return mensajes;
 }
 
-export async function ejecutarConsejos({ cliente, pedir, canalVincular, canalTips, claveLeetify, ahora = Date.now() }) {
+export async function ejecutarConsejos({ cliente, pedir, canalVincular, canalTips, claveLeetify, ahora = Date.now(), forzar = false }) {
+  if (!forzar && !enVentanaDelViernes(ahora)) return { jugadores: 0, mensajes: 0, repetido: false, fueraDeHorario: true };
   const yo = await cliente.yo();
   if (yaPublicados(await cliente.mensajes(canalTips, 50), { botId: yo.id, ahora })) {
     return { jugadores: 0, mensajes: 0, repetido: true };
@@ -191,9 +188,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     canalVincular: CANAL_VINCULAR,
     canalTips: CANAL_TIPS,
     claveLeetify: LEETIFY_API_KEY,
+    forzar: process.env.FORZAR === "true",
   });
   console.log(
-    resumen.repetido
+    resumen.fueraDeHorario
+      ? "Fuera de horario: los consejos salen entre el viernes a las 12 y el sábado a las 12."
+      : resumen.repetido
       ? "Los consejos de esta semana ya estaban publicados: no se repiten."
       : `Listo: consejos para ${resumen.jugadores} jugadores en ${resumen.mensajes} mensajes.`
   );

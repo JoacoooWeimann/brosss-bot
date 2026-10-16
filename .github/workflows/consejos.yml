@@ -8,6 +8,10 @@ on:
     - cron: "0 15 * * 5"
   workflow_dispatch:
     inputs:
+      forzar:
+        description: "Publicar aunque no sea viernes entre las 12 y el sábado a las 12"
+        type: boolean
+        default: false
       premios_prueba:
         description: "Premios en modo prueba: cuenta y muestra en el log, sin publicar"
         type: boolean
@@ -35,6 +39,7 @@ jobs:
           LEETIFY_API_KEY: ${{ secrets.LEETIFY_API_KEY }}
           CANAL_VINCULAR: ${{ vars.CANAL_VINCULAR || secrets.CANAL_VINCULAR }}
           CANAL_TIPS: ${{ vars.CANAL_TIPS || secrets.CANAL_TIPS }}
+          FORZAR: ${{ inputs.forzar }}
       # Aunque fallen los consejos, el meme de la semana sale igual
       - run: node src/meme-semana.js
         if: success() || failure()
@@ -42,6 +47,7 @@ jobs:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           CANAL_MEMES: ${{ vars.CANAL_MEMES || secrets.CANAL_MEMES }}
           ROL_MEME: ${{ vars.ROL_MEME || secrets.ROL_MEME }}
+          FORZAR: ${{ inputs.forzar }}
       - run: node src/premios.js
         if: success() || failure()
         env:
@@ -52,3 +58,4 @@ jobs:
           CATEGORIAS_CHAT: ${{ vars.CATEGORIAS_CHAT }}
           CANALES_EXCLUIDOS: ${{ vars.CANALES_EXCLUIDOS }}
           PREMIOS_PRUEBA: ${{ inputs.premios_prueba }}
+          FORZAR: ${{ inputs.forzar }}
