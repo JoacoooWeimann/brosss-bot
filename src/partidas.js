@@ -32,8 +32,17 @@ export function nombreMapa(mapa) {
 }
 
 // La partida completa: los 10 jugadores con sus stats
-export async function consultarDetalle(id, pedir, clave) {
-  const res = await pedir(`${LEETIFY}/v2/matches/${encodeURIComponent(id)}`, clave ? { _leetify_key: clave } : {});
+// Si Leetify corta por exceso de pedidos (429), espera y reintenta. Si
+// sigue cortando, el error lleva limite: true, y la partida se posterga
+// a la vuelta siguiente (en vez de salir sin imagen).
+export async function consultarDetalle(id, pedir, clave, { intentos = 3, espera = 4000 } = {}) {
+  let res;
+  for (let i = 0; i < intentos; i++) {
+    if (i) await new Promise((r) => setTimeout(r, espera * i));
+    res = await pedir(`${LEETIFY}/v2/matches/${encodeURIComponent(id)}`, clave ? { _leetify_key: clave } : {});
+    if (res.status !== 429) break;
+  }
+  if (res.status === 429) throw Object.assign(new Error("Leetify cortó por exceso de pedidos (429)"), { limite: true });
   if (!res.ok) throw new Error(`Leetify (partida) respondió ${res.status}`);
   const detalle = await res.json();
   if (!Array.isArray(detalle?.stats) || !detalle.stats.length) throw new Error("Leetify no trajo los jugadores de la partida");
@@ -125,5 +134,29 @@ export function embedPartidaConImagen(partida, archivo) {
     color: base.color,
     image: { url: `attachment://${archivo}` },
     footer: base.footer,
+  };
+}
+
+// El ID de la partida a partir del link de Leetify del embed
+export const idDeUrl = (url) => /match-details\/([\w-]+)/.exec(String(url ?? ""))?.[1] ?? null;
+
+// Resúmenes de texto que publicó el bot (sin imagen): se pueden mejorar
+export function sinImagen(mensajes, botId) {
+  return mensajes.filter(
+    (m) => m.author?.id === botId && !m.attachments?.length && idDeUrl(m.embeds?.[0]?.url) && !m.embeds[0].image
+  );
+}
+
+// El embed de un resumen viejo, ahora con la imagen (sin las stats en texto)
+export function embedMejorado(embed, archivo) {
+  const { fields, ...resto } = embed;
+  const jugaron = (fields ?? []).map((f) => `**${String(f.name).replace(/^⭐ /, "").replace(/ · \d+ MVP$/, "")}**`);
+  return {
+    title: resto.title,
+    url: resto.url,
+    description: [resto.description, jugaron.length && `Jugaron: ${jugaron.join(", ")}`].filter(Boolean).join("\n"),
+    color: resto.color,
+    image: { url: `attachment://${archivo}` },
+    footer: resto.footer,
   };
 }

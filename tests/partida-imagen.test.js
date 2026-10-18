@@ -50,3 +50,28 @@ test("el embed con imagen dice quiénes del server jugaron y mantiene el link (p
   assert.match(e.description, /Jugaron: \*\*Kyo\*\*, \*\*Joacooo\*\*/);
   assert.equal(e.image.url, "attachment://partida-m1.png");
 });
+
+test("Leetify corta (429): reintenta y, si sigue, avisa para postergar", async () => {
+  const { consultarDetalle } = await import("../src/partidas.js");
+  let n = 0;
+  const pedir = async () => (++n < 3 ? { status: 429 } : { status: 200, ok: true, json: async () => ({ stats: [{ steam64_id: "a" }] }) });
+  assert.equal((await consultarDetalle("m", pedir, null, { espera: 1 })).stats.length, 1);
+  await assert.rejects(consultarDetalle("m", async () => ({ status: 429 }), null, { espera: 1 }), (e) => e.limite === true);
+  await assert.rejects(consultarDetalle("m", async () => ({ status: 500, ok: false }), null, { espera: 1 }), (e) => !e.limite);
+});
+
+test("encuentra los resúmenes sin imagen y les arma el embed con imagen", async () => {
+  const { sinImagen, idDeUrl, embedMejorado } = await import("../src/partidas.js");
+  const viejo = {
+    id: "1", author: { id: "bot" }, attachments: [],
+    embeds: [{ title: "🏆 Victoria en Mirage · 13-7", url: "https://leetify.com/app/match-details/abc-123", description: "Competitivo · <t:1:R>",
+      color: 1, fields: [{ name: "⭐ Kyo · 5 MVP", value: "19/9/6" }, { name: "ELAYAS", value: "8/12/5" }], footer: { text: "Datos de Leetify" } }],
+  };
+  const conImagen = { ...viejo, id: "2", attachments: [{ filename: "partida-x.png" }] };
+  assert.deepEqual(sinImagen([viejo, conImagen, { ...viejo, id: "3", author: { id: "otro" } }], "bot").map((m) => m.id), ["1"]);
+  assert.equal(idDeUrl(viejo.embeds[0].url), "abc-123");
+  const e = embedMejorado(viejo.embeds[0], "partida-abc-123.png");
+  assert.equal(e.image.url, "attachment://partida-abc-123.png");
+  assert.match(e.description, /Jugaron: \*\*Kyo\*\*, \*\*ELAYAS\*\*/);
+  assert.equal(e.fields, undefined);
+});

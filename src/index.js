@@ -19,7 +19,9 @@ import { registrosDesdeMensajes, OK, ERROR, MOTIVOS } from "./vincular.js";
 import { armarEmbed, embedConImagen, ordenar } from "./ranking.js";
 import { svgRanking, renderizar, huella, cargarAvatares } from "./ranking-imagen.js";
 import * as semana from "./semana.js";
-import { consultarPartidas, consultarDetalle, agrupar, embedPartida, embedPartidaConImagen, yaPublicadas } from "./partidas.js";
+import {
+  consultarPartidas, consultarDetalle, agrupar, embedPartida, embedPartidaConImagen, yaPublicadas, sinImagen, idDeUrl, embedMejorado,
+} from "./partidas.js";
 import { svgPartida } from "./partida-imagen.js";
 import { consultarTiktok, videosNuevos, mensajeVideo } from "./tiktok.js";
 import { revisarBump, mensajeBump } from "./bump.js";
@@ -71,36 +73,80 @@ async function enTandas(items, tamaño, fn) {
 
 // Publica en #historial las partidas nuevas de los registrados.
 // Si algo falla, no frena el ranking: se reintenta en la próxima vuelta.
-// Una partida: la tabla completa en imagen (los 10 jugadores) o, si
-// Leetify no la da o no se puede dibujar, el resumen de texto
+const pausa = (ms) => new Promise((r) => setTimeout(r, ms));
+const PAUSA_LEETIFY_MS = 1500; // entre partida y partida, para que Leetify no corte
+
+// Una partida: la tabla completa en imagen (los 10 jugadores). Si Leetify
+// corta por exceso de pedidos, se posterga a la próxima vuelta (devuelve
+// false). Si falla por otra cosa, sale el resumen de texto.
 async function publicarPartida({ cliente, pedir, canalHistorial, claveLeetify, partida, jugadores, conImagen }) {
   if (conImagen) {
     try {
       const detalle = await consultarDetalle(partida.id, pedir, claveLeetify);
       const archivo = `partida-${partida.id}.png`;
       const png = await renderizar(svgPartida(detalle, jugadores));
-      return await cliente.enviarConArchivos(
+      await cliente.enviarConArchivos(
         canalHistorial,
         { embeds: [embedPartidaConImagen(partida, archivo)], allowed_mentions: { parse: [] } },
         [{ nombre: archivo, datos: png }]
       );
+      return true;
     } catch (error) {
+      if (error.limite) {
+        console.warn(`Historial: partida ${partida.id} postergada (${error.message})`);
+        return false;
+      }
       console.warn(`Historial: partida ${partida.id} sin imagen (${error.message})`);
     }
   }
-  return cliente.enviar(canalHistorial, { embeds: [embedPartida(partida)], allowed_mentions: { parse: [] } });
+  await cliente.enviar(canalHistorial, { embeds: [embedPartida(partida)], allowed_mentions: { parse: [] } });
+  return true;
+}
+
+// A los resúmenes de texto que quedaron sin imagen (por ejemplo, porque
+// Leetify cortó) les agrega la imagen editando el mismo mensaje. Pocos
+// por vuelta, para no volver a saturar a Leetify.
+async function mejorarSinImagen({ cliente, pedir, canalHistorial, claveLeetify, jugadores, mensajes, botId, cuantos = 2 }) {
+  let mejorados = 0;
+  for (const m of sinImagen(mensajes, botId).slice(0, cuantos)) {
+    const id = idDeUrl(m.embeds[0].url);
+    try {
+      await pausa(PAUSA_LEETIFY_MS);
+      const detalle = await consultarDetalle(id, pedir, claveLeetify);
+      const archivo = `partida-${id}.png`;
+      const png = await renderizar(svgPartida(detalle, jugadores));
+      await cliente.editarConArchivos(canalHistorial, m.id, { embeds: [embedMejorado(m.embeds[0], archivo)] }, [{ nombre: archivo, datos: png }]);
+      mejorados++;
+    } catch (error) {
+      console.warn(`Historial: no pude agregarle la imagen a la partida ${id} (${error.message})`);
+      if (error.limite) break;
+    }
+  }
+  return mejorados;
 }
 
 async function publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, jugadores, botId, ahora, conImagen }) {
   try {
-    const publicadas = yaPublicadas(await cliente.mensajes(canalHistorial, 100), botId);
+    const mensajes = await cliente.mensajes(canalHistorial, 100);
+    const publicadas = yaPublicadas(mensajes, botId);
     const partidasPorJugador = await enTandas(jugadores, EN_PARALELO, async (jugador) => ({
       jugador,
       partidas: await consultarPartidas(jugador.steamId, pedir, claveLeetify),
     }));
     const nuevas = agrupar(partidasPorJugador, { ahora, publicadas });
-    for (const p of nuevas) await publicarPartida({ cliente, pedir, canalHistorial, claveLeetify, partida: p, jugadores, conImagen });
-    return nuevas.length;
+    let publicadasAhora = 0;
+    for (const [i, p] of nuevas.entries()) {
+      if (i) await pausa(PAUSA_LEETIFY_MS);
+      const ok = await publicarPartida({ cliente, pedir, canalHistorial, claveLeetify, partida: p, jugadores, conImagen });
+      // Leetify cortó: el resto queda para la próxima vuelta (en orden)
+      if (!ok) break;
+      publicadasAhora++;
+    }
+    if (conImagen) {
+      const mejoradas = await mejorarSinImagen({ cliente, pedir, canalHistorial, claveLeetify, jugadores, mensajes, botId });
+      if (mejoradas) console.log(`Historial: ${mejoradas} partidas viejas ahora tienen imagen.`);
+    }
+    return publicadasAhora;
   } catch (error) {
     console.warn(`Historial: ${error.message}`);
     return 0;
