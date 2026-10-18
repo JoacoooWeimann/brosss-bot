@@ -32,7 +32,7 @@ import { embedsRedes, consultarStats, hayCambios, TITULO as TITULO_REDES } from 
 import { actualizarClipsWeb } from "./clips-web.js";
 
 const ESPERA_MAXIMA_MS = 8000;
-const EN_PARALELO = 4; // para no saturar a Leetify
+const EN_PARALELO = 2; // de a pocos, para que Leetify no corte
 
 // Consulta Steam y Leetify. Devuelve { estado, perfil?, steamId? }.
 // Si una API falla devuelve "reintentar": no es culpa del jugador.
@@ -129,10 +129,15 @@ async function publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, 
   try {
     const mensajes = await cliente.mensajes(canalHistorial, 100);
     const publicadas = yaPublicadas(mensajes, botId);
-    const partidasPorJugador = await enTandas(jugadores, EN_PARALELO, async (jugador) => ({
-      jugador,
-      partidas: await consultarPartidas(jugador.steamId, pedir, claveLeetify),
-    }));
+    // Si falla la lista de un jugador, se saltea solo a ese (la próxima vuelta se reintenta)
+    const partidasPorJugador = await enTandas(jugadores, EN_PARALELO, async (jugador) => {
+      try {
+        return { jugador, partidas: await consultarPartidas(jugador.steamId, pedir, claveLeetify) };
+      } catch (error) {
+        console.warn(`Historial: sin partidas de ${jugador.nombre} esta vuelta (${error.message})`);
+        return { jugador, partidas: [] };
+      }
+    });
     const nuevas = agrupar(partidasPorJugador, { ahora, publicadas });
     let publicadasAhora = 0;
     for (const [i, p] of nuevas.entries()) {

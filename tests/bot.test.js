@@ -180,3 +180,14 @@ test("foto de perfil: la propia o la de por defecto", async () => {
   assert.match(urlAvatar({ id: "1557937551698821130" }), /^https:\/\/cdn\.discordapp\.com\/embed\/avatars\/[0-5]\.png$/);
   assert.equal(urlAvatar({ id: "a" }), "https://cdn.discordapp.com/embed/avatars/0.png");
 });
+
+test("pedidos a Leetify: reintenta si corta (429) y respeta Retry-After", async () => {
+  const { pedirLeetify } = await import("../src/leetify.js");
+  let n = 0;
+  const res = await pedirLeetify("u", async () => (++n < 2 ? { status: 429, headers: { get: () => "0" } } : { status: 200 }), null, { espera: 1 });
+  assert.equal(res.status, 200);
+  assert.equal(n, 2);
+  let m = 0;
+  assert.equal((await pedirLeetify("u", async () => (m++, { status: 429 }), null, { espera: 1 })).status, 429);
+  assert.equal(m, 3);
+});

@@ -8,6 +8,22 @@
 
 const LEETIFY = "https://api-public.cs-prod.leetify.com";
 
+// Todos los pedidos a Leetify pasan por acá: si corta por exceso de
+// pedidos (429), espera lo que diga (Retry-After) o unos segundos y
+// reintenta. Devuelve la última respuesta.
+export async function pedirLeetify(url, pedir, clave, { intentos = 3, espera = 4000 } = {}) {
+  let res;
+  for (let i = 0; i < intentos; i++) {
+    res = await pedir(url, clave ? { _leetify_key: clave } : {});
+    if (res.status !== 429 || i === intentos - 1) break;
+    const pide = Number(res.headers?.get?.("retry-after"));
+    await new Promise((r) => setTimeout(r, Number.isFinite(pide) && pide > 0 ? Math.min(pide, 30) * 1000 : espera * (i + 1)));
+  }
+  return res;
+}
+
+export const errorDeLimite = () => Object.assign(new Error("Leetify cortó por exceso de pedidos (429)"), { limite: true });
+
 const numero = (n) => (typeof n === "number" && Number.isFinite(n) ? n : null);
 const positivo = (n) => (numero(n) !== null && n > 0 ? n : null);
 
@@ -54,7 +70,8 @@ export function leerAreas(datos) {
 //  - { estado: "privado" }     → tiene el perfil de Leetify en privado
 // Si Leetify falla, tira un error (se reintenta en la próxima vuelta).
 export async function consultarLeetify(steamId, pedir, clave) {
-  const res = await pedir(`${LEETIFY}/v3/profile?steam64_id=${steamId}`, clave ? { _leetify_key: clave } : {});
+  const res = await pedirLeetify(`${LEETIFY}/v3/profile?steam64_id=${steamId}`, pedir, clave);
+  if (res.status === 429) throw errorDeLimite();
   if (res.status === 404) return { estado: "sin-cuenta" };
   if (!res.ok) throw new Error(`Leetify respondió ${res.status}`);
   const datos = await res.json();

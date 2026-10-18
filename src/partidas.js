@@ -7,6 +7,8 @@
 //  Leetify de sus últimos mensajes en el canal.
 // =============================================================
 
+import { pedirLeetify, errorDeLimite } from "./leetify.js";
+
 const LEETIFY = "https://api-public.cs-prod.leetify.com";
 const VENTANA_MS = 48 * 60 * 60 * 1000; // solo partidas de las últimas 48 horas
 const VERDE = 0x22e36b;
@@ -35,14 +37,9 @@ export function nombreMapa(mapa) {
 // Si Leetify corta por exceso de pedidos (429), espera y reintenta. Si
 // sigue cortando, el error lleva limite: true, y la partida se posterga
 // a la vuelta siguiente (en vez de salir sin imagen).
-export async function consultarDetalle(id, pedir, clave, { intentos = 3, espera = 4000 } = {}) {
-  let res;
-  for (let i = 0; i < intentos; i++) {
-    if (i) await new Promise((r) => setTimeout(r, espera * i));
-    res = await pedir(`${LEETIFY}/v2/matches/${encodeURIComponent(id)}`, clave ? { _leetify_key: clave } : {});
-    if (res.status !== 429) break;
-  }
-  if (res.status === 429) throw Object.assign(new Error("Leetify cortó por exceso de pedidos (429)"), { limite: true });
+export async function consultarDetalle(id, pedir, clave, opciones) {
+  const res = await pedirLeetify(`${LEETIFY}/v2/matches/${encodeURIComponent(id)}`, pedir, clave, opciones);
+  if (res.status === 429) throw errorDeLimite();
   if (!res.ok) throw new Error(`Leetify (partida) respondió ${res.status}`);
   const detalle = await res.json();
   if (!Array.isArray(detalle?.stats) || !detalle.stats.length) throw new Error("Leetify no trajo los jugadores de la partida");
@@ -50,7 +47,8 @@ export async function consultarDetalle(id, pedir, clave, { intentos = 3, espera 
 }
 
 export async function consultarPartidas(steamId, pedir, clave) {
-  const res = await pedir(`${LEETIFY}/v3/profile/matches?steam64_id=${steamId}`, clave ? { _leetify_key: clave } : {});
+  const res = await pedirLeetify(`${LEETIFY}/v3/profile/matches?steam64_id=${steamId}`, pedir, clave);
+  if (res.status === 429) throw errorDeLimite();
   if (res.status === 404) return [];
   if (!res.ok) throw new Error(`Leetify (partidas) respondió ${res.status}`);
   const lista = await res.json();
