@@ -69,7 +69,9 @@ test("vuelta completa: solo los que están en Leetify reciben consejo", async ()
     url.includes("0000001")
       ? { status: 200, ok: true, json: async () => ({ privacy_mode: "public", ranks: {}, stats: { accuracy_head: 12 } }) }
       : { status: 404, ok: false };
-  const r = await ejecutarConsejos({ cliente, pedir, canalVincular: "v", canalTips: "t" });
+  // Fecha fija dentro de la ventana del viernes (si no, el test depende del día en que corre)
+  const ahora = Date.parse("2026-10-16T15:05:00Z");
+  const r = await ejecutarConsejos({ cliente, pedir, canalVincular: "v", canalTips: "t", ahora });
   assert.deepEqual(r, { jugadores: 1, mensajes: 1, repetido: false });
   assert.equal(enviados[0].canal, "t");
   assert.match(enviados[0].cuerpo.embeds[0].description, /<@a>.*Headshots/);

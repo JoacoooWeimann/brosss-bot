@@ -1,0 +1,25 @@
+# Los tests corren cuando se sube código, no en cada vuelta del bot:
+# así un test roto avisa al subir el cambio, pero no frena el ranking,
+# la voz ni los premios.
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test

@@ -112,6 +112,8 @@ En este repositorio → **Settings → Secrets and variables → Actions**:
 npm test
 ```
 
+En GitHub, los tests corren en el workflow **Tests** cada vez que se sube código. Las vueltas del bot no los corren: así un test roto no frena el ranking, la voz ni los premios.
+
 Antes, `npm install`: la única dependencia es [sharp](https://sharp.pixelplumbing.com/), para dibujar el ranking en imagen. La fuente Rajdhani está en `assets/fuentes/` (licencia OFL).
 
 | Archivo | Qué hace |

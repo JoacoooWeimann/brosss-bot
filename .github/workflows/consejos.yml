@@ -32,7 +32,6 @@ jobs:
           cache: npm
       # sharp: para dibujar el ranking en imagen
       - run: npm ci
-      - run: npm test
       - run: node src/consejos.js
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
