@@ -41,18 +41,40 @@ function zContraElServer(usuarioId, todos) {
   return i >= 0 ? z[i] : {};
 }
 
-// El rol en el que mejor encaja, comparado con el resto del server
-export function rolIdeal(usuarioId, todos) {
+const EMOJI_PREMIER = (p) =>
+  p == null ? "⚫" : p < 5000 ? "⚪" : p < 10000 ? "🩵" : p < 15000 ? "🔵" : p < 20000 ? "🟣" : p < 25000 ? "🩷" : p < 30000 ? "🔴" : "🟡";
+
+// Los roles ordenados de mejor a peor para él, comparado con el resto del server
+export function rolesIdeales(usuarioId, todos, cuantos = 3) {
   const z = zContraElServer(usuarioId, todos);
-  const [rol, puntaje] = Object.keys(ROLES).map((k) => [k, puntajeRol(z, k)]).sort((a, b) => b[1] - a[1])[0];
-  return { rol, encaje: encaje(puntaje) };
+  return Object.keys(ROLES)
+    .map((rol) => ({ rol, encaje: encaje(puntajeRol(z, rol)) }))
+    .sort((a, b) => b.encaje - a.encaje)
+    .slice(0, cuantos);
 }
+export const rolIdeal = (usuarioId, todos) => rolesIdeales(usuarioId, todos, 1)[0];
+
+// En qué lugar está entre los vinculados para esa área, de 0 (el peor) a 1 (el mejor)
+function percentil(usuarioId, todos, k) {
+  const menos = AREAS[k]?.[2];
+  const propio = valor(todos[usuarioId], k);
+  const otros = Object.entries(todos).filter(([id]) => id !== usuarioId).map(([, d]) => valor(d, k)).filter((v) => typeof v === "number");
+  if (typeof propio !== "number" || !otros.length) return null;
+  const peores = otros.filter((v) => (menos ? v > propio : v < propio)).length;
+  const iguales = otros.filter((v) => v === propio).length;
+  return (peores + iguales / 2) / otros.length;
+}
+
+const cuadritos = (p, largo = 5) => {
+  const llenos = Math.max(0, Math.min(largo, Math.round(p * largo)));
+  const color = p >= 0.67 ? "🟩" : p >= 0.34 ? "🟨" : "🟥";
+  return color.repeat(llenos) + "⬛".repeat(largo - llenos);
+};
 
 // Puntos fuertes y débiles: las áreas más arriba y más abajo del promedio del server
 export function fuertesYDebiles(usuarioId, todos, cuantos = 3) {
   const datos = todos[usuarioId];
   const lista = Object.entries(todos).map(([id, d]) => ({ id, datos: d }));
-  // z de cada área (incluidas las que no usan los roles)
   const z = {};
   for (const [k, [, , menos]] of Object.entries(AREAS)) {
     const valores = lista.map((j) => valor(j.datos, k)).filter((v) => typeof v === "number");
@@ -66,84 +88,134 @@ export function fuertesYDebiles(usuarioId, todos, cuantos = 3) {
   const texto = ([k]) => `**${AREAS[k][0]}** · ${AREAS[k][1](valor(datos, k))}`;
   return {
     fuertes: orden.filter(([, v]) => v > 0).slice(0, cuantos).map(texto),
-    debiles: orden.filter(([, v]) => v < 0).slice(-2).reverse().map(texto),
+    debiles: orden.filter(([, v]) => v < 0).slice(-cuantos).reverse().map(texto),
   };
 }
+
+const RENDIMIENTO = [
+  ["aim", "🎯"], ["hs", "💀"], ["preaim", "📐"],
+  ["reaccion", "⚡"], ["spray", "🔫"], ["counterstrafe", "🦶"],
+  ["utilidad", "💨"], ["posicionamiento", "🧭"], ["clutch", "🥷"],
+];
 
 export function mensajeStats(usuarioId, todos) {
   const d = todos[usuarioId];
   const { fuertes, debiles } = fuertesYDebiles(usuarioId, todos);
-  const { rol, encaje: enc } = rolIdeal(usuarioId, todos);
+  const roles = rolesIdeales(usuarioId, todos);
   const leetify = urlLeetify(d.steamId);
-  return {
-    embeds: [
-      {
-        title: `📊 Stats de ${d.nombre}`,
-        url: leetify ?? undefined,
-        description: `<@${usuarioId}>`,
-        color: colorPremier(d.premier),
-        thumbnail: d.avatar ? { url: d.avatar } : undefined,
-        fields: [
-          { name: "📈 Premier", value: d.premier != null ? `**${miles(d.premier)}**` : "Sin rango", inline: true },
-          { name: "🟧 FACEIT", value: d.faceit != null ? `**Nivel ${d.faceit}**` : "—", inline: true },
-          { name: "🏆 Winrate", value: d.winrate != null ? `**${r(d.winrate * 100)}%**` : "—", inline: true },
-          { name: "🎮 Partidas", value: d.partidas != null ? miles(d.partidas) : "—", inline: true },
-          { name: "🎯 Aim", value: d.areas?.aim != null ? `${r(d.areas.aim)}` : "—", inline: true },
-          { name: "💀 Headshots", value: d.areas?.hs != null ? `${r(d.areas.hs)}%` : "—", inline: true },
-          { name: "💪 Puntos fuertes", value: fuertes.join("\n") || "—", inline: true },
-          { name: "📉 Para mejorar", value: debiles.join("\n") || "—", inline: true },
-          { name: `${ROLES[rol].emoji} Rol ideal: ${ROLES[rol].nombre}`, value: barra(enc), inline: false },
-        ],
-        footer: { text: "Comparado con el resto de los vinculados del server · datos de Leetify" },
-      },
-    ],
-    allowed_mentions: { parse: [] },
+  const datosRapidos = [
+    d.faceit != null ? `🟧 FACEIT **nivel ${d.faceit}**` : null,
+    d.winrate != null ? `🏆 **${r(d.winrate * 100)}%** winrate` : null,
+    d.partidas != null ? `🎮 **${miles(d.partidas)}** partidas` : null,
+  ].filter(Boolean);
+
+  const portada = {
+    author: { name: "FICHA DE JUGADOR · BROSSS" },
+    title: d.nombre,
+    url: leetify ?? undefined,
+    description: [
+      `<@${usuarioId}>`,
+      `## ${EMOJI_PREMIER(d.premier)} ${d.premier != null ? miles(d.premier) : "Sin rango de Premier"}`,
+      datosRapidos.join("  ·  "),
+    ].join("\n"),
+    color: colorPremier(d.premier),
+    thumbnail: d.avatar ? { url: d.avatar } : undefined,
   };
+
+  const rendimiento = {
+    title: "📊 Rendimiento",
+    description: "-# La barra muestra dónde está entre los vinculados del server (🟩 de los mejores · 🟥 de los que más tienen que mejorar)",
+    color: 0x22e36b,
+    fields: RENDIMIENTO.filter(([k]) => typeof valor(d, k) === "number").map(([k, emoji]) => {
+      const p = percentil(usuarioId, todos, k);
+      return { name: `${emoji} ${AREAS[k][0]}`, value: `**${AREAS[k][1](valor(d, k))}**${p != null ? `\n${cuadritos(p)}` : ""}`, inline: true };
+    }),
+  };
+
+  const medallas = ["🥇", "🥈", "🥉"];
+  const tarjetaRoles = {
+    title: "🎯 Roles ideales",
+    description: roles.map((x, i) => `${medallas[i]} ${ROLES[x.rol].emoji} **${ROLES[x.rol].nombre}**\n${barra(x.encaje)}`).join("\n\n"),
+    color: ROLES[roles[0].rol].color,
+  };
+
+  const resumen = {
+    color: 0x22e36b,
+    fields: [
+      { name: "💪 Puntos fuertes", value: fuertes.join("\n") || "—", inline: true },
+      { name: "📉 Para mejorar", value: debiles.join("\n") || "—", inline: true },
+    ],
+    footer: { text: "Comparado con el resto de los vinculados del server · datos de Leetify" },
+  };
+
+  return { embeds: [portada, rendimiento, tarjetaRoles, resumen], allowed_mentions: { parse: [] } };
 }
 
 // Las stats que se comparan en /comparar
 const COMPARAR = [
-  ["Premier", (d) => d.premier, (v) => miles(v)],
-  ["FACEIT", (d) => d.faceit, (v) => `Nv ${v}`],
-  ["Winrate", (d) => d.winrate, (v) => `${r(v * 100)}%`],
-  ...Object.entries(AREAS).map(([k, [nombre, formato, menos]]) => [nombre, (d) => d.areas?.[k], formato, menos]),
+  ["📈", "Premier", (d) => d.premier, (v) => miles(v)],
+  ["🟧", "FACEIT", (d) => d.faceit, (v) => `Nv ${v}`],
+  ["🏆", "Winrate", (d) => d.winrate, (v) => `${r(v * 100)}%`],
+  ...[
+    ["🎯", "aim"], ["💀", "hs"], ["🔍", "precision"], ["📐", "preaim"], ["⚡", "reaccion"], ["🔫", "spray"], ["🦶", "counterstrafe"],
+    ["💨", "utilidad"], ["✨", "flashes"], ["🧭", "posicionamiento"], ["🤝", "tradeKills"], ["🥷", "clutch"], ["🚪", "apertura"], ["💥", "entradaT"],
+  ].map(([emoji, k]) => [emoji, AREAS[k][0], (d) => d.areas?.[k], AREAS[k][1], AREAS[k][2]]),
 ];
 
-const ANCHO = 9;
-const celda = (t, n = ANCHO) => (t.length > n ? t.slice(0, n - 1) + "…" : t);
+const AZUL = 0x5c9dff;
+const ROJO = 0xff4d4d;
+
+// La "cinchada": el que gana se queda con más cuadraditos (6 a 9 de 10)
+export function cinchada(va, vb, menos = false) {
+  if (va === vb) return "🟦".repeat(5) + "🟥".repeat(5);
+  const ganaA = menos ? va < vb : va > vb;
+  const dif = Math.min(1, Math.abs(va - vb) / Math.max(Math.abs(va), Math.abs(vb), 1e-9));
+  const delGanador = 5 + Math.max(1, Math.ceil(dif * 4));
+  const a = ganaA ? delGanador : 10 - delGanador;
+  return "🟦".repeat(a) + "🟥".repeat(10 - a);
+}
 
 export function mensajeComparar(idA, idB, todos) {
   const a = todos[idA];
   const b = todos[idB];
   let ganaA = 0;
   let ganaB = 0;
-  const filas = [];
-  for (const [nombre, sacar, formato, menos] of COMPARAR) {
+  const lineas = [];
+  for (const [emoji, nombre, sacar, formato, menos] of COMPARAR) {
     const va = sacar(a);
     const vb = sacar(b);
     if (typeof va !== "number" || typeof vb !== "number") continue;
-    const mejorA = menos ? va < vb : va > vb;
-    const mejorB = menos ? vb < va : vb > va;
-    if (mejorA) ganaA++;
-    if (mejorB) ganaB++;
-    const flecha = mejorA ? "◀" : mejorB ? "▶" : "=";
-    filas.push(`${celda(nombre, 16).padEnd(16)} ${formato(va).padStart(7)} ${flecha} ${formato(vb).padEnd(7)}`);
+    if (menos ? va < vb : va > vb) ganaA++;
+    else if (menos ? vb < va : vb > va) ganaB++;
+    lineas.push(`${emoji} **${nombre}**\n\`${formato(va)}\` ${cinchada(va, vb, menos)} \`${formato(vb)}\``);
   }
-  const cabecera = `${"".padEnd(16)} ${celda(a.nombre, 7).padStart(7)}   ${celda(b.nombre, 7)}`;
-  const ganador = ganaA === ganaB ? "🤝 **Empate**" : `🏆 **${ganaA > ganaB ? a.nombre : b.nombre}** gana en ${Math.max(ganaA, ganaB)} de ${filas.length}`;
-  const rolA = rolIdeal(idA, todos);
-  const rolB = rolIdeal(idB, todos);
+  const [rolA] = rolesIdeales(idA, todos, 1);
+  const [rolB] = rolesIdeales(idB, todos, 1);
+  const ficha = (d, rol, color) =>
+    `${color} **${d.nombre}**\n${EMOJI_PREMIER(d.premier)} ${d.premier != null ? miles(d.premier) : "Sin rango"}\n${ROLES[rol.rol].emoji} ${ROLES[rol.rol].nombre}`;
+  const empate = ganaA === ganaB;
+  const ganador = ganaA > ganaB ? a : b;
+
   return {
     embeds: [
       {
-        title: `⚔️ ${a.nombre} vs ${b.nombre}`,
-        description: `<@${idA}> vs <@${idB}>\n\`\`\`\n${cabecera}\n${filas.join("\n")}\n\`\`\`\n${ganador}`,
-        color: colorPremier(Math.max(a.premier ?? 0, b.premier ?? 0) || null),
+        author: { name: "CARA A CARA · BROSSS" },
+        title: `⚔️ ${a.nombre.toUpperCase()} vs ${b.nombre.toUpperCase()}`,
+        description: `<@${idA}> 🟦 vs 🟥 <@${idB}>`,
+        color: empate ? 0x22e36b : ganaA > ganaB ? AZUL : ROJO,
         fields: [
-          { name: `Rol ideal de ${a.nombre}`, value: `${ROLES[rolA.rol].emoji} ${ROLES[rolA.rol].nombre} · ${rolA.encaje}%`, inline: true },
-          { name: `Rol ideal de ${b.nombre}`, value: `${ROLES[rolB.rol].emoji} ${ROLES[rolB.rol].nombre} · ${rolB.encaje}%`, inline: true },
+          { name: "\u200b", value: ficha(a, rolA, "🟦"), inline: true },
+          { name: "\u200b", value: "## VS", inline: true },
+          { name: "\u200b", value: ficha(b, rolB, "🟥"), inline: true },
         ],
-        footer: { text: "◀ ▶ marca quién es mejor en cada stat · datos de Leetify" },
+      },
+      { title: "📊 Stat por stat", description: lineas.join("\n"), color: 0x22e36b },
+      {
+        description: empate
+          ? `## 🤝 Empate ${ganaA} – ${ganaB}`
+          : `## 🏆 ${ganador.nombre} gana ${Math.max(ganaA, ganaB)} – ${Math.min(ganaA, ganaB)}`,
+        color: empate ? 0x22e36b : ganaA > ganaB ? AZUL : ROJO,
+        footer: { text: "🟦 / 🟥: el que gana cada stat se queda con más cuadraditos · datos de Leetify" },
       },
     ],
     allowed_mentions: { parse: [] },

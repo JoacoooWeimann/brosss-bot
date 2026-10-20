@@ -68,9 +68,9 @@ Configuración (una vez):
 
 ### 📊 /stats, ⚔️ /comparar y 💨 /smoke
 Los atiende la misma función de Netlify que /team.
-- **`/stats [jugador]`**: la ficha de un vinculado (sin elegir, la tuya): Premier, FACEIT, winrate, partidas, puntos fuertes y qué mejorar (comparado con el resto de los vinculados) y su rol ideal. El título lleva a su perfil de Leetify.
-- **`/comparar jugador1 [jugador2]`**: los dos lado a lado, stat por stat, con ◀ ▶ para el mejor en cada una y quién gana más (sin el segundo, te compara con vos).
-- **`/smoke mapa [tipo] [zona]`**: links a los lineups con video de [CSNADES](https://csnades.gg) (smokes, molotovs o flashes), a YouTube y al mapa de práctica de Workshop. No escribe instrucciones de lineup propias a propósito.
+- **`/stats [jugador]`**: la ficha de un vinculado (sin elegir, la tuya): Premier en grande, FACEIT, winrate y partidas; 9 stats con una barra de dónde está entre los vinculados; sus **3 roles ideales**; puntos fuertes y qué mejorar. El título lleva a su perfil de Leetify.
+- **`/comparar jugador1 [jugador2]`**: cara a cara (🟦 contra 🟥), una "cinchada" de cuadraditos por cada stat y el marcador final (sin el segundo, te compara con vos).
+- **`/smoke mapa [tipo] [lado]`**: los lineups reales de [CSNADES](https://csnades.gg) agrupados por destino, con desde dónde se tira, la técnica y el link al video de cada uno (⭐ = fácil), con el banner del mapa. La lista se baja **una vez por día** a `datos/lineups.json` (`src/csnades.js`), así el comando no depende de que csnades responda en el momento. No escribe instrucciones de lineup propias a propósito.
 
 ### Consejos semanales (#tips)
 Todos los **viernes a las 12** (hora de Argentina), el bot busca el punto más flojo de cada jugador de #vincular entre 12 áreas de Leetify (puntería, headshots, preaim, spray, counter-strafe, utilidad, flashes, tradeos…) y publica en **#tips** qué practicar, con un mapa de workshop y videos. Menciona a cada uno **sin notificar**.
@@ -159,6 +159,7 @@ Antes, `npm install`: la única dependencia es [sharp](https://sharp.pixelplumbi
 | `src/premios.js` | Premios de chat y voz, con sus medallas |
 | `src/stats-jugador.js` | /stats y /comparar |
 | `src/lineups.js` | /smoke |
+| `src/csnades.js` | Baja los lineups de csnades una vez por día |
 | `src/formacion.js` | Reparte los roles de /team según las stats |
 | `src/comando-team.js` | Atiende /team y /formacion (lo usa la función de Netlify) |
 | `src/firma.js` | Verifica que el pedido venga de Discord |

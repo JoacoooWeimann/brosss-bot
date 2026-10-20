@@ -9,7 +9,7 @@
 
 import { crearCliente } from "./discord.js";
 import { idDeCanal } from "./ids.js";
-import { MAPAS, TIPOS, ZONAS } from "./lineups.js";
+import { MAPAS, TIPOS, LADOS } from "./lineups.js";
 
 // Todos opcionales: sin ninguno, usa a los de tu canal de voz
 const opcionJugador = (n) => ({
@@ -46,12 +46,12 @@ export const COMANDOS = [
   {
     name: "smoke",
     type: 1,
-    description: "Lineups de un mapa (smokes, molotovs o flashes) con video",
+    description: "Lineups de un mapa (smokes, molotovs o flashes) con el video de cada uno",
     options: [
       { type: 3, name: "mapa", description: "Mapa", required: true, choices: eleccion(MAPAS) },
       { type: 3, name: "tipo", description: "Smokes (por defecto), molotovs o flashes", required: false,
         choices: eleccion(Object.entries(TIPOS).map(([v, t]) => [t.nombre, v])) },
-      { type: 3, name: "zona", description: "A, B o Mid", required: false, choices: eleccion(Object.entries(ZONAS).map(([v, n]) => [n, v])) },
+      { type: 3, name: "lado", description: "T o CT (sin elegir, los dos)", required: false, choices: eleccion(Object.entries(LADOS).map(([v, n]) => [n, v])) },
     ],
   },
 ];

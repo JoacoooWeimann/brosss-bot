@@ -20,6 +20,7 @@ import { armarEmbed, embedConImagen, ordenar } from "./ranking.js";
 import { svgRanking, renderizar, huella, cargarAvatares } from "./ranking-imagen.js";
 import * as semana from "./semana.js";
 import * as datosJugadores from "./jugadores-datos.js";
+import * as csnades from "./csnades.js";
 import {
   consultarPartidas, consultarDetalle, agrupar, embedPartida, embedPartidaConImagen, yaPublicadas, sinImagen, idDeUrl, embedMejorado,
 } from "./partidas.js";
@@ -430,6 +431,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   });
   const cambio = await semana.guardar(resumen.historial, historial);
   // Para el comando /team (Netlify): las stats de cada vinculado
+  // Para /smoke: la lista de lineups de csnades, una vez por día
+  try {
+    const nuevos = await csnades.actualizarLineups(await csnades.leer(), pedir);
+    if (nuevos) await csnades.guardar(nuevos);
+  } catch (error) {
+    console.warn(`Lineups: ${error.message}`);
+  }
   if (resumen.jugadores) {
     const previo = await datosJugadores.leer();
     await datosJugadores.guardar(datosJugadores.armarDatos(resumen.jugadores, { previo, registrados: resumen.usuariosRegistrados }));

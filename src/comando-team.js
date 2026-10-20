@@ -17,6 +17,7 @@ import { mensajeLineups } from "./lineups.js";
 const RAW = "https://raw.githubusercontent.com/JoacoooWeimann/brosss-bot/main/datos";
 export const DATOS_URL = `${RAW}/jugadores.json`;
 export const VOZ_URL = `${RAW}/voz.json`;
+export const LINEUPS_URL = `${RAW}/lineups.json`;
 export const NOMBRES = ["team", "formacion"];
 const EFIMERO = 64; // solo lo ve quien usó el comando
 
@@ -125,9 +126,10 @@ export async function atender(peticion, { clavePublica, pedir = fetch } = {}) {
     return respuesta({ type: 4, data: mensajeComparar(a, b, datos) });
   }
 
-  // /smoke mapa [tipo] [zona]
+  // /smoke mapa [tipo] [lado]
   if (interaccion.type === 2 && nombre === "smoke") {
-    return respuesta({ type: 4, data: mensajeLineups(opcion("mapa"), opcion("tipo"), opcion("zona")) });
+    const lineups = await leerJson(LINEUPS_URL, pedir);
+    return respuesta({ type: 4, data: mensajeLineups(opcion("mapa"), opcion("tipo"), opcion("lado"), lineups) });
   }
 
   return privado("No conozco ese comando.");
