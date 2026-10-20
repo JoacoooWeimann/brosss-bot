@@ -119,3 +119,11 @@ test("usuarios elegidos: sin repetir y con el apodo del server si tiene", () => 
     resolved: { users: { 1: { username: "user" } }, members: { 1: { nick: "Apodo" } } } } });
   assert.deepEqual(u, [{ usuarioId: "1", nombre: "Apodo", bot: false }]);
 });
+
+test("la clave se limpia (espacios, comillas) y el GET dice si está cargada", async () => {
+  assert.equal(firmaValida("hola", firmar("hola"), "1700000000", ` "${clavePublica}" \n`), true);
+  const estado = async (clave) => (await (await atender(new Request("https://x/interacciones"), { clavePublica: clave })).json()).clavePublica;
+  assert.equal(await estado(clavePublica), "cargada");
+  assert.equal(await estado(""), "falta");
+  assert.match(await estado("abc"), /mal cargada/);
+});

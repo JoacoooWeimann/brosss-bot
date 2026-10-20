@@ -4,7 +4,7 @@
 //  Separado de la función para poder testearlo sin Netlify.
 // =============================================================
 
-import { firmaValida } from "./firma.js";
+import { firmaValida, limpiarClave } from "./firma.js";
 import { armarFormacion, mensajeFormacion } from "./formacion.js";
 
 export const DATOS_URL = "https://raw.githubusercontent.com/JoacoooWeimann/brosss-bot/main/datos/jugadores.json";
@@ -28,6 +28,11 @@ export function usuariosElegidos(interaccion) {
 }
 
 export async function atender(peticion, { clavePublica, canalVincular, pedir = fetch } = {}) {
+  // Diagnóstico (abrir la URL en el navegador): si la clave está cargada, sin mostrarla
+  if (peticion.method === "GET") {
+    const largo = limpiarClave(clavePublica).length;
+    return respuesta({ funcion: "ok", clavePublica: largo === 64 ? "cargada" : largo ? `mal cargada (${largo} caracteres, tienen que ser 64)` : "falta" });
+  }
   const cuerpo = await peticion.text();
   const ok = firmaValida(cuerpo, peticion.headers.get("x-signature-ed25519"), peticion.headers.get("x-signature-timestamp"), clavePublica);
   if (!ok) return new Response("firma inválida", { status: 401 });
