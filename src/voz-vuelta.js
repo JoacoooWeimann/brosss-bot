@@ -17,9 +17,11 @@ if (!DISCORD_TOKEN || !CANAL_PREMIOS) {
 
 const ahora = Date.now();
 const { guild_id } = await crearCliente(DISCORD_TOKEN).canal(CANAL_PREMIOS);
-const usuarios = voz.quienesCuentan(await voz.fotoDeVoz(DISCORD_TOKEN, guild_id));
+const foto = await voz.fotoDeVoz(DISCORD_TOKEN, guild_id);
+const usuarios = voz.quienesCuentan(foto);
 const anterior = await voz.leer();
-const nuevo = voz.sumar(anterior, usuarios, ahora);
+// Además de los minutos, quién está en cada canal (lo usa /team sin jugadores)
+const nuevo = { ...voz.sumar(anterior, usuarios, ahora), canales: voz.enCanales(foto) };
 const cambio = await voz.guardar(nuevo, anterior);
 console.log(
   usuarios.length

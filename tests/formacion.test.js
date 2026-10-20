@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync, sign } from "node:crypto";
-import { armarFormacion, mensajeFormacion, puntajesRelativos, ROLES } from "../src/formacion.js";
+import { armarFormacion, mensajeFormacion, puntajesRelativos, ROLES, barra, encaje, jugadoresDelMensaje, colorPremier } from "../src/formacion.js";
 import { firmaValida } from "../src/firma.js";
-import { atender, usuariosElegidos } from "../src/comando-team.js";
+import { atender, usuariosElegidos, delCanalDeVoz } from "../src/comando-team.js";
 import { armarDatos } from "../src/jugadores-datos.js";
 
 // Cada uno es claramente el mejor en lo de su rol
@@ -19,41 +19,76 @@ const jugadores = [
 ];
 
 test("reparte cada rol al que mejor lo cumple, sin repetir", () => {
-  const f = armarFormacion(jugadores);
-  assert.deepEqual(Object.fromEntries(f.map((x) => [x.jugador.usuarioId, x.rol])), {
+  const { asignados, variante, cantidad } = armarFormacion(jugadores);
+  assert.deepEqual(Object.fromEntries(asignados.map((x) => [x.jugador.usuarioId, x.rol])), {
     awp: "awp", entry: "entry", sup: "support", lurk: "lurker", igl: "igl",
   });
-  assert.equal(new Set(f.map((x) => x.rol)).size, 5);
-  assert.equal(f.find((x) => x.rol === "awp").motivo, "Aim 95");
+  assert.equal(new Set(asignados.map((x) => x.rol)).size, 5);
+  assert.equal(asignados.find((x) => x.rol === "awp").motivo, "Aim 95");
+  assert.ok(asignados.every((x) => x.encaje > 50), "cada uno encaja mejor que el promedio en su rol");
+  assert.deepEqual([variante, cantidad], [0, 5]);
+});
+
+test("Mezclar: cada variante es otra formación y da la vuelta", () => {
+  const roles = (v) => armarFormacion(jugadores, { variante: v }).asignados.map((x) => `${x.jugador.usuarioId}:${x.rol}`).join(",");
+  const vistas = new Set([0, 1, 2, 3, 4].map(roles));
+  assert.equal(vistas.size, 5);
+  assert.equal(roles(5), roles(0));
 });
 
 test("las stats se comparan dentro del grupo: sin diferencias, todo da 0", () => {
   const z = puntajesRelativos([{ datos: datos({}) }, { datos: datos({}) }]);
   assert.ok(Object.values(z[0]).every((v) => v === 0));
+  assert.equal(encaje(0), 50);
 });
 
 test("los que no tienen stats se llevan los roles que sobran y se les avisa", () => {
   const f = armarFormacion([jugadores[0], { usuarioId: "nuevo", nombre: "N", datos: null }]);
-  assert.equal(f.length, 2);
-  const nuevo = f.find((x) => x.jugador.usuarioId === "nuevo");
-  assert.ok(nuevo.rol && nuevo.rol !== f.find((x) => x.jugador.usuarioId === "awp").rol);
-  const m = mensajeFormacion(f, { canalVincular: "123" });
-  assert.match(m.embeds[0].description, /<@nuevo> — sin stats de Leetify/);
-  assert.match(m.embeds[0].description, /vinculá tu Steam en <#123>/);
-  assert.deepEqual(m.allowed_mentions, { parse: [] });
+  assert.equal(f.asignados.length, 2);
+  const nuevo = f.asignados.find((x) => x.jugador.usuarioId === "nuevo");
+  assert.ok(nuevo.rol && nuevo.rol !== f.asignados.find((x) => x.jugador.usuarioId === "awp").rol);
+  const m = mensajeFormacion(f);
+  const tarjeta = m.embeds.find((e) => e.description.startsWith("<@nuevo>"));
+  assert.match(tarjeta.description, /Sin stats de Leetify/);
 });
 
 test("con más de 5 se usan los primeros 5", () => {
   const seis = [...jugadores, { usuarioId: "extra", nombre: "X", datos: datos({}) }];
-  assert.equal(armarFormacion(seis).length, 5);
+  assert.equal(armarFormacion(seis).asignados.length, 5);
 });
 
-test("el mensaje: un renglón por rol con emoji, mención y motivo", () => {
+test("el mensaje: resumen, una tarjeta por jugador con su color, plan de compra y botón Mezclar", () => {
+  const m = mensajeFormacion(armarFormacion(jugadores), { origen: "de tu canal de voz" });
+  assert.equal(m.embeds.length, 7);
+  const [resumen, awp, , , , , compra] = m.embeds;
+  assert.match(resumen.description, /\*\*5 jugadores\*\* de tu canal de voz/);
+  assert.deepEqual(resumen.fields.map((f) => f.name), ["🏆 Winrate promedio", "🎯 Aim promedio", "🧪 Química del equipo"]);
+  assert.equal(awp.title, "🎯 AWPER · A");
+  assert.equal(awp.color, ROLES.awp.color);
+  assert.match(awp.description, /^<@awp>\n\*.+\*\n\n\*\*Encaje en el rol\*\*\n🟩+⬛* \*\*\d+%\*\*$/u);
+  assert.equal(awp.fields[0].name, "Aim");
+  assert.match(compra.description, /🎯 \*\*A\*\* — AWP/);
+  assert.match(compra.footer.text, /Formación 1 de 5/);
+  assert.equal(m.components[0].components[0].custom_id, "mezclar:1");
+  assert.deepEqual(m.allowed_mentions, { parse: [] });
+});
+
+test("barra de encaje, color por Premier y jugadores del mensaje para Mezclar", () => {
+  assert.equal(barra(80, 5), "🟩🟩🟩🟩⬛ **80%**");
+  assert.equal(barra(30, 5), "🟥🟥⬛⬛⬛ **30%**");
+  assert.equal(colorPremier(16000), 0xc166ff);
   const m = mensajeFormacion(armarFormacion(jugadores));
-  const lineas = m.embeds[0].description.split("\n");
-  assert.equal(lineas.length, 5);
-  assert.match(lineas[0], /^🎯 \*\*AWPer\*\* · <@awp> — Aim 95$/);
-  assert.equal(Object.keys(ROLES).length, 5);
+  assert.deepEqual(jugadoresDelMensaje(m).map((j) => j.usuarioId), ["awp", "entry", "sup", "lurk", "igl"]);
+  assert.equal(jugadoresDelMensaje(m)[0].nombre, "A");
+});
+
+test("canal de voz: toma a los de tu canal, primero los que tienen stats, hasta 5", () => {
+  const voz = { canales: { c1: ["a", "b", "yo", "c", "d", "e"], c2: ["otro"] } };
+  const datos = { e: { nombre: "E" }, yo: { nombre: "Yo" } };
+  const lista = delCanalDeVoz("yo", voz, datos);
+  assert.equal(lista.length, 5);
+  assert.deepEqual(lista.slice(0, 2).map((u) => u.usuarioId).sort(), ["e", "yo"]);
+  assert.equal(delCanalDeVoz("nadie", voz, datos), null);
 });
 
 test("datos para /team: si Leetify falló para alguien vinculado, conserva lo anterior", () => {
@@ -100,11 +135,11 @@ test("función: /team arma la formación con los datos del bot", async () => {
     },
   };
   const pedir = async () => ({ ok: true, json: async () => ({ jugadores: { awp: jugadores[0].datos } }) });
-  const r = await (await atender(peticion(interaccion), { clavePublica, pedir, canalVincular: "9" })).json();
+  const r = await (await atender(peticion(interaccion), { clavePublica, pedir })).json();
   assert.equal(r.type, 4);
-  const texto = r.data.embeds[0].description;
+  const texto = r.data.embeds.map((e) => e.description).join("\n");
   assert.match(texto, /<@awp>/);
-  assert.match(texto, /<@nuevo> — sin stats/);
+  assert.match(texto, /<@nuevo>\n\*Sin stats/);
   assert.ok(!texto.includes("musica"), "los bots no cuentan");
 });
 
@@ -126,4 +161,28 @@ test("la clave se limpia (espacios, comillas) y el GET dice si está cargada", a
   assert.equal(await estado(clavePublica), "cargada");
   assert.equal(await estado(""), "falta");
   assert.match(await estado("abc"), /mal cargada/);
+});
+
+test("función: /team sin jugadores usa tu canal de voz, o te avisa si no estás en ninguno", async () => {
+  const pedir = async (url) => ({
+    ok: true,
+    json: async () => (url.endsWith("voz.json") ? { canales: { c1: ["awp", "entry", "yo"] } } : { jugadores: { awp: jugadores[0].datos, entry: jugadores[1].datos } }),
+  });
+  const conVoz = { type: 2, member: { user: { id: "yo" } }, data: { name: "team" } };
+  const r = await (await atender(peticion(conVoz), { clavePublica, pedir })).json();
+  assert.match(r.data.embeds[0].description, /\*\*3 jugadores\*\* de tu canal de voz/);
+  const sinVoz = { ...conVoz, member: { user: { id: "ausente" } } };
+  const r2 = await (await atender(peticion(sinVoz), { clavePublica, pedir })).json();
+  assert.equal(r2.data.flags, 64);
+  assert.match(r2.data.content, /canal de voz/);
+});
+
+test("función: Mezclar edita el mismo mensaje con la formación siguiente", async () => {
+  const pedir = async () => ({ ok: true, json: async () => ({ jugadores: Object.fromEntries(jugadores.map((j) => [j.usuarioId, j.datos])) }) });
+  const anterior = mensajeFormacion(armarFormacion(jugadores));
+  const click = { type: 3, data: { custom_id: "mezclar:1" }, message: { embeds: anterior.embeds } };
+  const r = await (await atender(peticion(click), { clavePublica, pedir })).json();
+  assert.equal(r.type, 7);
+  assert.match(r.data.embeds.at(-1).footer.text, /Formación 2 de 5/);
+  assert.equal(r.data.components[0].components[0].custom_id, "mezclar:2");
 });

@@ -9,17 +9,18 @@
 import { crearCliente } from "./discord.js";
 import { idDeCanal } from "./ids.js";
 
+// Todos opcionales: sin ninguno, usa a los de tu canal de voz
 const opcionJugador = (n) => ({
   type: 6, // usuario
   name: `jugador${n}`,
-  description: n === 1 ? "Primer jugador" : `Jugador ${n}`,
-  required: n === 1,
+  description: n === 1 ? "Primer jugador (sin elegir a nadie, usa a los de tu canal de voz)" : `Jugador ${n}`,
+  required: false,
 });
 
 export const COMANDOS = ["team", "formacion"].map((name) => ({
   name,
   type: 1,
-  description: "Reparte los roles de CS2 (AWPer, Entry, Support, Lurker, IGL) según las stats de cada uno",
+  description: "Roles de CS2 según las stats de cada uno. Sin elegir jugadores, usa a los de tu canal de voz",
   options: [1, 2, 3, 4, 5].map(opcionJugador),
 }));
 

@@ -22,6 +22,8 @@ export function armarDatos(jugadores, { previo = null, registrados = [] } = {}) 
       premier: j.premier ?? null,
       winrate: j.winrate ?? null,
       partidas: j.partidas ?? null,
+      faceit: j.faceit ?? null,
+      avatar: j.avatar ?? null,
       areas: j.areas ?? {},
     };
   }

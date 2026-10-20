@@ -64,6 +64,18 @@ export function quienesCuentan({ estados, afk, bots }) {
   return [...porCanal.values()].filter((usuarios) => usuarios.length >= 2).flat();
 }
 
+// Quién está en cada canal de voz ahora (sin bots ni AFK), para que /team
+// pueda armar la formación con los del canal de quien lo usa
+export function enCanales({ estados, afk, bots }) {
+  const canales = {};
+  for (const e of estados) {
+    if (!e.channel_id || e.channel_id === afk || bots.has(e.user_id)) continue;
+    (canales[e.channel_id] ??= []).push(e.user_id);
+  }
+  for (const lista of Object.values(canales)) lista.sort();
+  return Object.fromEntries(Object.entries(canales).sort(([a], [b]) => a.localeCompare(b)));
+}
+
 // Suma la foto al registro de la semana (y guarda la anterior al cambiar).
 // Si ya se sumó hace menos de una vuelta (el workflow corrió dos veces
 // seguidas: cron-job.org y GitHub a la vez), no suma de nuevo.

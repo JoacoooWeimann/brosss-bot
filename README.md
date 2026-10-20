@@ -53,6 +53,9 @@ Los viernes a las 12, con los consejos:
 
 ### 🎯 /team y /formacion
 `/team jugador1:@... jugador2:@...` (hasta 5) reparte los roles **AWPer, Entry, Support, Lurker e IGL** según las stats de Leetify de cada uno, comparados entre ellos, y elige la combinación que da el mejor equipo en total. Los que no están vinculados se llevan los roles que sobran.
+- **Sin elegir jugadores** usa a los de tu canal de voz (la vuelta de voz guarda cada 5 minutos quién está en cada canal en `datos/voz.json`).
+- El mensaje trae un resumen del equipo (Premier, winrate y aim promedio, química), una tarjeta por jugador con el color de su rol, su encaje en el rol y sus stats, y el plan de compra.
+- El botón **🔀 Mezclar** cambia el mismo mensaje por la siguiente mejor formación (recorre las 5 mejores).
 
 Un comando con / tiene que responder en menos de 3 segundos, así que no lo atiende este bot (que corre cada tanto) sino una **función de Netlify** (`netlify/functions/interacciones.mjs`). Para que sea rápida, no consulta Leetify: lee `datos/jugadores.json`, que la vuelta de 15 minutos deja con las stats de cada vinculado. **No lo borres ni lo muevas.**
 
