@@ -19,6 +19,7 @@ import { registrosDesdeMensajes, OK, ERROR, MOTIVOS } from "./vincular.js";
 import { armarEmbed, embedConImagen, ordenar } from "./ranking.js";
 import { svgRanking, renderizar, huella, cargarAvatares } from "./ranking-imagen.js";
 import * as semana from "./semana.js";
+import * as datosJugadores from "./jugadores-datos.js";
 import {
   consultarPartidas, consultarDetalle, agrupar, embedPartida, embedPartidaConImagen, yaPublicadas, sinImagen, idDeUrl, embedMejorado,
 } from "./partidas.js";
@@ -425,6 +426,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     historial,
   });
   const cambio = await semana.guardar(resumen.historial, historial);
+  // Para el comando /team (Netlify): las stats de cada vinculado
+  if (resumen.jugadores) {
+    const previo = await datosJugadores.leer();
+    await datosJugadores.guardar(datosJugadores.armarDatos(resumen.jugadores, { previo, registrados: resumen.usuariosRegistrados }));
+  }
   // Clips para la página web: si falla, el resto ya se hizo
   const web = await actualizarClipsWeb({
     videos: resumen.videosTiktok,

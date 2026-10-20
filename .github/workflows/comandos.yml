@@ -1,0 +1,23 @@
+# Registra los comandos con / del bot (/team y /formacion) en el server.
+# Se corre a mano una vez (y de nuevo solo si cambian las opciones).
+name: Comandos
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  registrar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: node src/registrar-comandos.js
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          CANAL_VINCULAR: ${{ vars.CANAL_VINCULAR || secrets.CANAL_VINCULAR }}

@@ -71,6 +71,8 @@ export function crearCliente(token, fetchFn = fetch) {
     sacarRol: (servidor, usuario, rol) => pedir("DELETE", `/guilds/${servidor}/members/${usuario}/roles/${rol}`),
 
     usuario: (id) => pedir("GET", `/users/${id}`),
+    aplicacion: () => pedir("GET", "/applications/@me"),
+    registrarComandos: (app, servidor, comandos) => pedir("PUT", `/applications/${app}/guilds/${servidor}/commands`, comandos),
     canalesDelServidor: (servidor) => pedir("GET", `/guilds/${servidor}/channels`),
 
     // Mensajes del canal hasta llegar a una fecha (tope de seguridad: 5000)

@@ -1,0 +1,11 @@
+# Sitio de Netlify del bot: no publica una página, solo la función que
+# responde los comandos con / de Discord (netlify/functions/interacciones.mjs).
+[build]
+  publish = "public"
+  command = "echo 'sin build'"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  # sharp no lo usa la función: que no lo empaquete
+  external_node_modules = ["sharp"]

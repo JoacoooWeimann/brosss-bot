@@ -51,6 +51,18 @@ Los viernes a las 12, con los consejos:
 - Podio de 3 en cada uno. Con `ROL_CHAT` y `ROL_VOZ`, las medallas pasan solas al nuevo ganador (el bot necesita **Gestionar roles** y estar más arriba que esos roles).
 - La foto de voz solo se toma si está `CANAL_PREMIOS`. En cron-job.org va una tarea aparte para `voz.yml`, cada 5 minutos.
 
+### 🎯 /team y /formacion
+`/team jugador1:@... jugador2:@...` (hasta 5) reparte los roles **AWPer, Entry, Support, Lurker e IGL** según las stats de Leetify de cada uno, comparados entre ellos, y elige la combinación que da el mejor equipo en total. Los que no están vinculados se llevan los roles que sobran.
+
+Un comando con / tiene que responder en menos de 3 segundos, así que no lo atiende este bot (que corre cada tanto) sino una **función de Netlify** (`netlify/functions/interacciones.mjs`). Para que sea rápida, no consulta Leetify: lee `datos/jugadores.json`, que la vuelta de 15 minutos deja con las stats de cada vinculado. **No lo borres ni lo muevas.**
+
+Configuración (una vez):
+1. En Netlify: **Add new site → Import an existing project** → este repo. Netlify lee `netlify.toml`, no hay que tocar nada más.
+2. En el sitio nuevo: **Site configuration → Environment variables** → `DISCORD_PUBLIC_KEY` = la **Public Key** del bot (portal de Discord → General Information). Opcional: `CANAL_VINCULAR`.
+3. Volvé a publicar el sitio (Deploys → Trigger deploy) para que tome la variable.
+4. En el portal de Discord → General Information → **Interactions Endpoint URL**: `https://<tu-sitio>.netlify.app/interacciones` → Save (Discord la prueba en el momento).
+5. **Actions → Comandos → Run workflow**: registra /team y /formacion en el server.
+
 ### Consejos semanales (#tips)
 Todos los **viernes a las 12** (hora de Argentina), el bot busca el punto más flojo de cada jugador de #vincular entre 12 áreas de Leetify (puntería, headshots, preaim, spray, counter-strafe, utilidad, flashes, tradeos…) y publica en **#tips** qué practicar, con un mapa de workshop y videos. Menciona a cada uno **sin notificar**.
 
@@ -136,6 +148,11 @@ Antes, `npm install`: la única dependencia es [sharp](https://sharp.pixelplumbi
 | `src/voz.js` | Foto de quién está en voz y minutos de la semana |
 | `src/voz-vuelta.js` | La vuelta de voz de cada 5 minutos |
 | `src/premios.js` | Premios de chat y voz, con sus medallas |
+| `src/formacion.js` | Reparte los roles de /team según las stats |
+| `src/comando-team.js` | Atiende /team y /formacion (lo usa la función de Netlify) |
+| `src/firma.js` | Verifica que el pedido venga de Discord |
+| `src/jugadores-datos.js` | Deja las stats de los vinculados para /team |
+| `src/registrar-comandos.js` | Registra los comandos con / |
 | `src/ranking.js` | Arma el embed: tabla ordenada, colores de Premier y destacados |
 | `src/discord.js` | Cliente mínimo de la API de Discord |
 

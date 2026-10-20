@@ -61,6 +61,12 @@ export function leerAreas(datos) {
     flashAmigos: numero(s.flashbang_hit_friend_per_flashbang),
     tradeos: numero(s.traded_deaths_success_percentage),
     utilidadSinUsar: numero(s.utility_on_death_avg),
+    // Para los roles de /team (src/formacion.js)
+    apertura: numero(r.opening),
+    clutch: numero(r.clutch),
+    entradaT: numero(s.t_opening_aggression_success_rate),
+    precision: numero(s.accuracy_enemy_spotted),
+    tradeKills: numero(s.trade_kills_success_percentage),
   };
 }
 
