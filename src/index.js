@@ -365,6 +365,9 @@ export async function ejecutar({
     historial: historialNuevo,
     // Los videos de TikTok ya consultados: el arranque los guarda para la web
     videosTiktok: tiktok?.videos ?? null,
+    // Para /team: las stats de los vinculados (el arranque las guarda)
+    jugadores,
+    usuariosRegistrados: registros.map((r) => r.usuarioId),
   };
 }
 

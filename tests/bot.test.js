@@ -152,6 +152,9 @@ test("vuelta completa: ✅ al que está, ❌ con explicación al que no, y nada 
   assert.equal(r.registrados, 3);
   assert.equal(r.enRanking, 1);
   assert.deepEqual(Object.keys(r.historial.base), ["76561190000000001"]);
+  // Para /team: devuelve los jugadores con stats y quiénes están vinculados
+  assert.deepEqual(r.jugadores.map((j) => j.usuarioId), ["1"]);
+  assert.deepEqual(r.usuariosRegistrados.sort(), ["1", "2", "3"]);
   assert.deepEqual(cliente.acciones, ["+✅ 10", "+❌ 20", "responde 20", "envia 🏆 RANKING CS2 · BROSSS"]);
 });
 
