@@ -186,3 +186,17 @@ test("función: Mezclar edita el mismo mensaje con la formación siguiente", asy
   assert.match(r.data.embeds.at(-1).footer.text, /Formación 2 de 5/);
   assert.equal(r.data.components[0].components[0].custom_id, "mezclar:2");
 });
+
+test("función: /stats, /comparar y /smoke", async () => {
+  const datos = Object.fromEntries(jugadores.map((j) => [j.usuarioId, { ...j.datos, nombre: j.nombre }]));
+  const pedir = async () => ({ ok: true, json: async () => ({ jugadores: datos }) });
+  const llamar = async (data, extra = {}) => (await (await atender(peticion({ type: 2, data, ...extra }), { clavePublica, pedir })).json()).data;
+  assert.equal((await llamar({ name: "stats", options: [{ name: "jugador", value: "awp" }] })).embeds[0].title, "📊 Stats de A");
+  // Sin elegir: las tuyas
+  assert.equal((await llamar({ name: "stats" }, { member: { user: { id: "sup" } } })).embeds[0].title, "📊 Stats de S");
+  assert.match((await llamar({ name: "stats", options: [{ name: "jugador", value: "nadie" }] })).content, /no está vinculado/);
+  const c = await llamar({ name: "comparar", options: [{ name: "jugador1", value: "awp" }, { name: "jugador2", value: "igl" }] });
+  assert.equal(c.embeds[0].title, "⚔️ A vs I");
+  assert.match((await llamar({ name: "comparar", options: [{ name: "jugador1", value: "awp" }] }, { member: { user: { id: "awp" } } })).content, /distintos/);
+  assert.equal((await llamar({ name: "smoke", options: [{ name: "mapa", value: "nuke" }] })).embeds[0].title, "💨 Smokes de Nuke");
+});

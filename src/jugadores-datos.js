@@ -24,6 +24,7 @@ export function armarDatos(jugadores, { previo = null, registrados = [] } = {}) 
       partidas: j.partidas ?? null,
       faceit: j.faceit ?? null,
       avatar: j.avatar ?? null,
+      steamId: j.steamId ?? null,
       areas: j.areas ?? {},
     };
   }

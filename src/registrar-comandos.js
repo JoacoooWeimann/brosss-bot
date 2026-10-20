@@ -1,6 +1,7 @@
 // =============================================================
 //  REGISTRAR LOS COMANDOS CON /
-//  Le dice a Discord qué comandos tiene el bot (/team y /formacion).
+//  Le dice a Discord qué comandos tiene el bot (/team, /formacion,
+//  /stats, /comparar y /smoke).
 //  Se corre una vez a mano (Actions → Comandos → Run workflow), y de
 //  nuevo solo si cambian las opciones. Se registran en el servidor de
 //  BROSSS, así aparecen al instante.
@@ -8,6 +9,7 @@
 
 import { crearCliente } from "./discord.js";
 import { idDeCanal } from "./ids.js";
+import { MAPAS, TIPOS, ZONAS } from "./lineups.js";
 
 // Todos opcionales: sin ninguno, usa a los de tu canal de voz
 const opcionJugador = (n) => ({
@@ -17,12 +19,42 @@ const opcionJugador = (n) => ({
   required: false,
 });
 
-export const COMANDOS = ["team", "formacion"].map((name) => ({
-  name,
-  type: 1,
-  description: "Roles de CS2 según las stats de cada uno. Sin elegir jugadores, usa a los de tu canal de voz",
-  options: [1, 2, 3, 4, 5].map(opcionJugador),
-}));
+const eleccion = (lista) => lista.map(([name, value]) => ({ name, value }));
+
+export const COMANDOS = [
+  ...["team", "formacion"].map((name) => ({
+    name,
+    type: 1,
+    description: "Roles de CS2 según las stats de cada uno. Sin elegir jugadores, usa a los de tu canal de voz",
+    options: [1, 2, 3, 4, 5].map(opcionJugador),
+  })),
+  {
+    name: "stats",
+    type: 1,
+    description: "La ficha de CS2 de un jugador: rangos, puntos fuertes, qué mejorar y su rol ideal",
+    options: [{ type: 6, name: "jugador", description: "De quién (sin elegir, las tuyas)", required: false }],
+  },
+  {
+    name: "comparar",
+    type: 1,
+    description: "Compara las stats de CS2 de dos jugadores, una por una",
+    options: [
+      { type: 6, name: "jugador1", description: "Primer jugador", required: true },
+      { type: 6, name: "jugador2", description: "Segundo jugador (sin elegir, vos)", required: false },
+    ],
+  },
+  {
+    name: "smoke",
+    type: 1,
+    description: "Lineups de un mapa (smokes, molotovs o flashes) con video",
+    options: [
+      { type: 3, name: "mapa", description: "Mapa", required: true, choices: eleccion(MAPAS) },
+      { type: 3, name: "tipo", description: "Smokes (por defecto), molotovs o flashes", required: false,
+        choices: eleccion(Object.entries(TIPOS).map(([v, t]) => [t.nombre, v])) },
+      { type: 3, name: "zona", description: "A, B o Mid", required: false, choices: eleccion(Object.entries(ZONAS).map(([v, n]) => [n, v])) },
+    ],
+  },
+];
 
 const { DISCORD_TOKEN } = process.env;
 const CANAL_VINCULAR = idDeCanal(process.env.CANAL_VINCULAR);

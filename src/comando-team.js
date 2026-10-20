@@ -11,6 +11,8 @@
 
 import { firmaValida, limpiarClave } from "./firma.js";
 import { armarFormacion, mensajeFormacion, jugadoresDelMensaje } from "./formacion.js";
+import { mensajeStats, mensajeComparar } from "./stats-jugador.js";
+import { mensajeLineups } from "./lineups.js";
 
 const RAW = "https://raw.githubusercontent.com/JoacoooWeimann/brosss-bot/main/datos";
 export const DATOS_URL = `${RAW}/jugadores.json`;
@@ -99,6 +101,33 @@ export async function atender(peticion, { clavePublica, pedir = fetch } = {}) {
     if (!elegidos.length) return privado("Elegí al menos un jugador (que no sea un bot).");
 
     return respuesta({ type: 4, data: mensajeFormacion(armarFormacion(conDatos(elegidos, datos)), { origen }) });
+  }
+
+  const nombre = interaccion.data?.name;
+  const opcion = (n) => interaccion.data?.options?.find((o) => o.name === n)?.value;
+  const noVinculado = (id) => privado(`<@${id}> no está vinculado (o todavía no tiene stats). Para aparecer, que pegue su link de Steam en #vincular.`);
+
+  // /stats [jugador]: sin elegir a nadie, las tuyas
+  if (interaccion.type === 2 && nombre === "stats") {
+    const id = opcion("jugador") ?? interaccion.member?.user?.id ?? interaccion.user?.id;
+    const datos = (await leerJson(DATOS_URL, pedir))?.jugadores ?? {};
+    if (!datos[id]) return noVinculado(id);
+    return respuesta({ type: 4, data: mensajeStats(id, datos) });
+  }
+
+  // /comparar jugador1 [jugador2]: sin el segundo, te compara con vos
+  if (interaccion.type === 2 && nombre === "comparar") {
+    const a = opcion("jugador1");
+    const b = opcion("jugador2") ?? interaccion.member?.user?.id ?? interaccion.user?.id;
+    if (a === b) return privado("Elegí dos jugadores distintos.");
+    const datos = (await leerJson(DATOS_URL, pedir))?.jugadores ?? {};
+    for (const id of [a, b]) if (!datos[id]) return noVinculado(id);
+    return respuesta({ type: 4, data: mensajeComparar(a, b, datos) });
+  }
+
+  // /smoke mapa [tipo] [zona]
+  if (interaccion.type === 2 && nombre === "smoke") {
+    return respuesta({ type: 4, data: mensajeLineups(opcion("mapa"), opcion("tipo"), opcion("zona")) });
   }
 
   return privado("No conozco ese comando.");

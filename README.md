@@ -66,6 +66,12 @@ Configuración (una vez):
 4. En el portal de Discord → General Information → **Interactions Endpoint URL**: `https://<tu-sitio>.netlify.app/interacciones` → Save (Discord la prueba en el momento).
 5. **Actions → Comandos → Run workflow**: registra /team y /formacion en el server.
 
+### 📊 /stats, ⚔️ /comparar y 💨 /smoke
+Los atiende la misma función de Netlify que /team.
+- **`/stats [jugador]`**: la ficha de un vinculado (sin elegir, la tuya): Premier, FACEIT, winrate, partidas, puntos fuertes y qué mejorar (comparado con el resto de los vinculados) y su rol ideal. El título lleva a su perfil de Leetify.
+- **`/comparar jugador1 [jugador2]`**: los dos lado a lado, stat por stat, con ◀ ▶ para el mejor en cada una y quién gana más (sin el segundo, te compara con vos).
+- **`/smoke mapa [tipo] [zona]`**: links a los lineups con video de [CSNADES](https://csnades.gg) (smokes, molotovs o flashes), a YouTube y al mapa de práctica de Workshop. No escribe instrucciones de lineup propias a propósito.
+
 ### Consejos semanales (#tips)
 Todos los **viernes a las 12** (hora de Argentina), el bot busca el punto más flojo de cada jugador de #vincular entre 12 áreas de Leetify (puntería, headshots, preaim, spray, counter-strafe, utilidad, flashes, tradeos…) y publica en **#tips** qué practicar, con un mapa de workshop y videos. Menciona a cada uno **sin notificar**.
 
@@ -151,6 +157,8 @@ Antes, `npm install`: la única dependencia es [sharp](https://sharp.pixelplumbi
 | `src/voz.js` | Foto de quién está en voz y minutos de la semana |
 | `src/voz-vuelta.js` | La vuelta de voz de cada 5 minutos |
 | `src/premios.js` | Premios de chat y voz, con sus medallas |
+| `src/stats-jugador.js` | /stats y /comparar |
+| `src/lineups.js` | /smoke |
 | `src/formacion.js` | Reparte los roles de /team según las stats |
 | `src/comando-team.js` | Atiende /team y /formacion (lo usa la función de Netlify) |
 | `src/firma.js` | Verifica que el pedido venga de Discord |
