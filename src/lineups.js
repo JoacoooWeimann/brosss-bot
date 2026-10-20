@@ -14,7 +14,7 @@ export const MAPAS = [
   ["Ancient", "ancient"],
   ["Anubis", "anubis"],
   ["Dust II", "dust2"],
-  ["Train", "train"],
+  ["Cache", "cache"],
   ["Overpass", "overpass"],
   ["Vertigo", "vertigo"],
 ];

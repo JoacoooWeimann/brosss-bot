@@ -93,6 +93,7 @@ test("/smoke: banner del mapa, lineups por destino con link y técnica, filtro p
   assert.equal(sin.embeds.length, 2);
   assert.equal(sin.components[0].components[0].url, "https://csnades.gg/nuke/molotovs");
   assert.equal(MAPAS.length, 9);
+  assert.ok(MAPAS.some(([n]) => n === "Cache") && !MAPAS.some(([n]) => n === "Train"));
 });
 
 test("csnades: lee los lineups de la página y los baja una vez por día", async () => {
@@ -101,7 +102,12 @@ test("csnades: lee los lineups de la página y los baja una vez por día", async
     { slug: "top-mid", lado: "t", desde: "T Spawn", hacia: "Top Mid", tecnica: "left", movimiento: "stationary", principiante: true },
   ]);
   const hoy = Date.parse("2026-10-20T12:00:00Z");
-  assert.equal(await actualizarLineups({ dia: "2026-10-20" }, async () => assert.fail("no debería pedir"), hoy), null);
+  const completo = { dia: "2026-10-20", mapas: Object.fromEntries(MAPAS.map(([, m]) => [m, {}])) };
+  assert.equal(await actualizarLineups(completo, async () => assert.fail("no debería pedir"), hoy), null);
+  // Si entra un mapa nuevo a la lista, lo baja en el momento aunque sea el mismo día
+  const sinCache = { ...completo, mapas: { ...completo.mapas } };
+  delete sinCache.mapas.cache;
+  assert.ok(await actualizarLineups(sinCache, async () => ({ ok: true, text: async () => html }), hoy));
   const nuevo = await actualizarLineups(null, async () => ({ ok: true, text: async () => html }), hoy);
   assert.equal(nuevo.dia, "2026-10-20");
   assert.equal(nuevo.mapas.mirage.smokes[0].hacia, "Top Mid");

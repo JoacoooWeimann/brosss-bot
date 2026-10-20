@@ -46,9 +46,12 @@ export async function consultarLineups(mapa, tipo, pedir) {
 
 const hoy = (ahora) => new Date(ahora).toISOString().slice(0, 10);
 
-// Baja todo si el archivo es de otro día. Si un mapa falla, conserva lo anterior.
+// Baja todo si el archivo es de otro día o si falta algún mapa de la lista
+// (por ejemplo, cuando entra un mapa nuevo al pool). Si un mapa falla,
+// conserva lo anterior.
 export async function actualizarLineups(previo, pedir, ahora = Date.now()) {
-  if (previo?.dia === hoy(ahora)) return null;
+  const faltaAlguno = MAPAS.some(([, mapa]) => !previo?.mapas?.[mapa]);
+  if (previo?.dia === hoy(ahora) && !faltaAlguno) return null;
   const mapas = {};
   for (const [, mapa] of MAPAS) {
     mapas[mapa] = {};
