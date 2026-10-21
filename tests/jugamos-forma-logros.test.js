@@ -76,6 +76,9 @@ test("/forma: racha, victorias, tendencia del rating y mejor partida", () => {
   assert.match(e.fields[0].value, /📈 Subiendo: \*\*\+8\.0\*\*/);
   assert.match(e.fields[1].value, /Mirage\*\* 13-7/);
   assert.equal(mensajeForma("1", { nombre: "X", recientes: [] }).flags, 64);
+  // Casi igual: estable, no "bajando"
+  const parejo = lista.map((p, i) => ({ ...p, rating: i < 5 ? 10.6 : 10.8 }));
+  assert.match(mensajeForma("1", { nombre: "K", recientes: parejo }).embeds[0].fields[0].value, /➡️ Estable/u);
 });
 
 // ---------- Jugadas destacadas y logros ----------

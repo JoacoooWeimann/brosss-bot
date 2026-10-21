@@ -70,7 +70,7 @@ export function mensajeForma(usuarioId, datos) {
       ? "—"
       : anteriores == null
         ? `**${signo(ultimas)}** de rating promedio`
-        : `${ultimas >= anteriores ? "📈 Subiendo" : "📉 Bajando"}: **${signo(ultimas)}** en las últimas 5 (antes ${signo(anteriores)})`;
+        : `${Math.abs(ultimas - anteriores) < 0.5 ? "➡️ Estable" : ultimas > anteriores ? "📈 Subiendo" : "📉 Bajando"}: **${signo(ultimas)}** en las últimas 5 (antes ${signo(anteriores)})`;
 
   const mejor = lista.filter((p) => typeof p.rating === "number").sort((a, b) => b.rating - a.rating)[0];
   const linea = (p) =>
