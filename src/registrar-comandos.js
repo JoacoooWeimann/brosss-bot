@@ -1,7 +1,8 @@
 // =============================================================
 //  REGISTRAR LOS COMANDOS CON /
 //  Le dice a Discord qué comandos tiene el bot (/team, /stats,
-//  /comparar, /forma, /tips, /jugamos y /smoke). Los que no están en la lista
+//  /comparar, /historial, /tips, /jugamos y /smoke). Antes /historial
+//  se llamaba /forma. Los que no están en la lista
 //  se borran del server (así se sacó /formacion).
 //  Se corre una vez a mano (Actions → Comandos → Run workflow), y de
 //  nuevo solo si cambian las opciones. Se registran en el servidor de
@@ -31,7 +32,7 @@ export const COMANDOS = [
     options: [1, 2, 3, 4, 5].map(opcionJugador),
   },
   {
-    name: "forma",
+    name: "historial",
     type: 1,
     description: "Las últimas 10 partidas de un jugador: racha, rating y su mejor partida",
     options: [{ type: 6, name: "jugador", description: "De quién (sin elegir, la tuya)", required: false }],

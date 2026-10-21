@@ -1,5 +1,5 @@
 // =============================================================
-//  /forma
+//  /historial (antes /forma)
 //  Las últimas 10 partidas de un vinculado: victorias y derrotas,
 //  cómo viene su rating y su mejor partida. El bot guarda un resumen
 //  de cada partida en datos/jugadores.json (campo "recientes"), con

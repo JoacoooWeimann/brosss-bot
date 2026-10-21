@@ -160,8 +160,8 @@ export async function atender(peticion, { clavePublica, pedir = fetch, despues =
     return respuesta({ type: 4, data: mensajeComparar(a, b, datos) });
   }
 
-  // /forma [jugador]: sin elegir a nadie, la tuya
-  if (interaccion.type === 2 && nombre === "forma") {
+  // /historial [jugador]: las últimas partidas (sin elegir a nadie, las tuyas)
+  if (interaccion.type === 2 && nombre === "historial") {
     const id = opcion("jugador") ?? interaccion.member?.user?.id ?? interaccion.user?.id;
     const datos = (await leerJson(DATOS_URL, pedir))?.jugadores ?? {};
     if (!datos[id]) return noVinculado(id);
