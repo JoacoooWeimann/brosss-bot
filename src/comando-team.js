@@ -13,12 +13,14 @@ import { firmaValida, limpiarClave } from "./firma.js";
 import { armarFormacion, mensajeFormacion, jugadoresDelMensaje } from "./formacion.js";
 import { mensajeStats, mensajeComparar } from "./stats-jugador.js";
 import { mensajeLineups } from "./lineups.js";
+import { mensajeForma } from "./forma.js";
+import { mensajeConvocatoria, leerConvocatoria, alternar, normalizarHora, MODOS } from "./convocatoria.js";
 
 const RAW = "https://raw.githubusercontent.com/JoacoooWeimann/brosss-bot/main/datos";
 export const DATOS_URL = `${RAW}/jugadores.json`;
 export const VOZ_URL = `${RAW}/voz.json`;
 export const LINEUPS_URL = `${RAW}/lineups.json`;
-export const NOMBRES = ["team", "formacion"];
+export const NOMBRES = ["team"];
 const EFIMERO = 64; // solo lo ve quien usó el comando
 
 const respuesta = (cuerpo, status = 200) =>
@@ -58,7 +60,16 @@ async function leerJson(url, pedir) {
 const conDatos = (lista, datos) =>
   lista.map((u) => ({ ...u, nombre: datos[u.usuarioId]?.nombre ?? u.nombre, datos: datos[u.usuarioId] ?? null }));
 
-export async function atender(peticion, { clavePublica, pedir = fetch } = {}) {
+// Mensaje de seguimiento (para avisar cuando se completa una convocatoria):
+// se manda después de responder, con el token de la interacción
+export const avisoSeguimiento = (interaccion, cuerpo, pedir = fetch) =>
+  pedir(`https://discord.com/api/v10/webhooks/${interaccion.application_id}/${interaccion.token}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cuerpo),
+  }).catch(() => {});
+
+export async function atender(peticion, { clavePublica, pedir = fetch, despues = null } = {}) {
   // Diagnóstico (abrir la URL en el navegador): si la clave está cargada, sin mostrarla
   if (peticion.method === "GET") {
     const largo = limpiarClave(clavePublica).length;
@@ -70,6 +81,28 @@ export async function atender(peticion, { clavePublica, pedir = fetch } = {}) {
 
   const interaccion = JSON.parse(cuerpo);
   if (interaccion.type === 1) return respuesta({ type: 1 }); // PING de Discord al configurar la URL
+
+  // Botones de /jugamos: sumarse o no poder (editando el mismo mensaje)
+  if (interaccion.type === 3 && String(interaccion.data?.custom_id).startsWith("jugamos:")) {
+    const [, boton, modo] = interaccion.data.custom_id.split(":");
+    const yo = interaccion.member?.user?.id ?? interaccion.user?.id;
+    const antes = leerConvocatoria(interaccion.message, modo);
+    const ahora = alternar(antes, yo, boton);
+    if (ahora.lleno) return privado("Ya está completo 😅 Si alguien se baja, vas a poder sumarte.");
+    const cupo = (MODOS[modo] ?? MODOS.premier).cupo;
+    const seCompleto = antes.si.length < cupo && ahora.si.length >= cupo;
+    // Al completarse, un mensaje nuevo que sí notifica a los anotados
+    if (seCompleto && despues) {
+      despues(
+        avisoSeguimiento(
+          interaccion,
+          { content: `🎮 **¡Equipo completo para ${MODOS[modo]?.nombre ?? "jugar"} a las ${ahora.hora}!** ${ahora.si.map((id) => `<@${id}>`).join(" ")}`, allowed_mentions: { users: ahora.si } },
+          pedir
+        )
+      );
+    }
+    return respuesta({ type: 7, data: mensajeConvocatoria(ahora) });
+  }
 
   // Botón "Mezclar": la formación siguiente, editando el mismo mensaje
   if (interaccion.type === 3 && String(interaccion.data?.custom_id).startsWith("mezclar:")) {
@@ -124,6 +157,21 @@ export async function atender(peticion, { clavePublica, pedir = fetch } = {}) {
     const datos = (await leerJson(DATOS_URL, pedir))?.jugadores ?? {};
     for (const id of [a, b]) if (!datos[id]) return noVinculado(id);
     return respuesta({ type: 4, data: mensajeComparar(a, b, datos) });
+  }
+
+  // /forma [jugador]: sin elegir a nadie, la tuya
+  if (interaccion.type === 2 && nombre === "forma") {
+    const id = opcion("jugador") ?? interaccion.member?.user?.id ?? interaccion.user?.id;
+    const datos = (await leerJson(DATOS_URL, pedir))?.jugadores ?? {};
+    if (!datos[id]) return noVinculado(id);
+    return respuesta({ type: 4, data: mensajeForma(id, datos[id]) });
+  }
+
+  // /jugamos hora [modo]: convocatoria con botones
+  if (interaccion.type === 2 && nombre === "jugamos") {
+    const modo = MODOS[opcion("modo")] ? opcion("modo") : "premier";
+    const yo = interaccion.member?.user?.id ?? interaccion.user?.id;
+    return respuesta({ type: 4, data: mensajeConvocatoria({ hora: normalizarHora(opcion("hora")), modo, creador: yo, si: [yo], no: [] }) });
   }
 
   // /smoke mapa [tipo] [lado]

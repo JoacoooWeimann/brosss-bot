@@ -17,6 +17,7 @@ export const ARCHIVO = new URL("../datos/jugadores.json", import.meta.url);
 export function armarDatos(jugadores, { previo = null, registrados = [] } = {}) {
   const porUsuario = {};
   for (const j of jugadores) {
+    const anterior = previo?.jugadores?.[j.usuarioId];
     porUsuario[j.usuarioId] = {
       nombre: j.nombre,
       premier: j.premier ?? null,
@@ -26,6 +27,9 @@ export function armarDatos(jugadores, { previo = null, registrados = [] } = {}) 
       avatar: j.avatar ?? null,
       steamId: j.steamId ?? null,
       areas: j.areas ?? {},
+      // Si esta vuelta no se pudieron traer sus partidas, quedan las de antes
+      recientes: j.recientes?.length ? j.recientes : (anterior?.recientes ?? []),
+      logros: j.logros ?? anterior?.logros ?? [],
     };
   }
   for (const id of registrados) {

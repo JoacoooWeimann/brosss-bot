@@ -144,7 +144,7 @@ test("función: /team arma la formación con los datos del bot", async () => {
 });
 
 test("función: sin jugadores válidos responde en privado", async () => {
-  const interaccion = { type: 2, data: { name: "formacion", options: [{ name: "jugador1", value: "b" }], resolved: { users: { b: { bot: true } } } } };
+  const interaccion = { type: 2, data: { name: "team", options: [{ name: "jugador1", value: "b" }], resolved: { users: { b: { bot: true } } } } };
   const r = await (await atender(peticion(interaccion), { clavePublica, pedir: async () => ({ ok: false }) })).json();
   assert.equal(r.data.flags, 64);
 });
@@ -200,4 +200,25 @@ test("función: /stats, /comparar y /smoke", async () => {
   assert.equal(c.embeds.length, 3);
   assert.match((await llamar({ name: "comparar", options: [{ name: "jugador1", value: "awp" }] }, { member: { user: { id: "awp" } } })).content, /distintos/);
   assert.equal((await llamar({ name: "smoke", options: [{ name: "mapa", value: "nuke" }] })).embeds[0].title, "💨 SMOKES DE NUKE");
+});
+
+test("función: /forma, /jugamos y sus botones (el aviso de completo va aparte)", async () => {
+  const datos = { awp: { ...jugadores[0].datos, nombre: "A", recientes: [{ id: "m", mapa: "de_mirage", ganados: 13, perdidos: 2, k: 20, d: 5, a: 1, adr: 120, rating: 9 }] } };
+  const pedir = async () => ({ ok: true, json: async () => ({ jugadores: datos }) });
+  const llamar = async (obj, extra = {}) => (await (await atender(peticion(obj), { clavePublica, pedir, ...extra })).json());
+  assert.equal((await llamar({ type: 2, data: { name: "forma" }, member: { user: { id: "awp" } } })).data.embeds[0].title, "📈 A");
+
+  const conv = await llamar({ type: 2, data: { name: "jugamos", options: [{ name: "hora", value: "22" }, { name: "modo", value: "wingman" }] }, member: { user: { id: "1" } } });
+  assert.equal(conv.data.embeds[0].title, "🤝 Wingman a las 22:00");
+
+  const avisos = [];
+  const click = { type: 3, application_id: "app", token: "tok", data: { custom_id: "jugamos:si:wingman" }, member: { user: { id: "2" } }, message: conv.data };
+  const r = await llamar(click, { despues: (promesa) => avisos.push(promesa), pedir: async (url, opciones) => (url.includes("/webhooks/") ? (avisos.push(url), { ok: true }) : pedir()) });
+  assert.equal(r.type, 7);
+  assert.match(r.data.embeds[0].description, /Equipo completo/);
+  assert.ok(avisos.some((a) => typeof a === "string" && a.endsWith("/webhooks/app/tok")), "manda el aviso que notifica");
+
+  // Un tercero en wingman: ya está completo, le avisa solo a él
+  const lleno = await llamar({ ...click, member: { user: { id: "3" } }, message: r.data });
+  assert.equal(lleno.data.flags, 64);
 });

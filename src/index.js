@@ -21,6 +21,8 @@ import { svgRanking, renderizar, huella, cargarAvatares } from "./ranking-imagen
 import * as semana from "./semana.js";
 import * as datosJugadores from "./jugadores-datos.js";
 import * as csnades from "./csnades.js";
+import * as logros from "./logros.js";
+import { recientes } from "./forma.js";
 import {
   consultarPartidas, consultarDetalle, agrupar, embedPartida, embedPartidaConImagen, yaPublicadas, sinImagen, idDeUrl, embedMejorado,
 } from "./partidas.js";
@@ -89,7 +91,7 @@ async function publicarPartida({ cliente, pedir, canalHistorial, claveLeetify, p
       const png = await renderizar(svgPartida(detalle, jugadores));
       await cliente.enviarConArchivos(
         canalHistorial,
-        { embeds: [embedPartidaConImagen(partida, archivo)], allowed_mentions: { parse: [] } },
+        { embeds: [embedPartidaConImagen(partida, archivo), logros.embedDestacadas(partida)].filter(Boolean), allowed_mentions: { parse: [] } },
         [{ nombre: archivo, datos: png }]
       );
       return true;
@@ -101,7 +103,7 @@ async function publicarPartida({ cliente, pedir, canalHistorial, claveLeetify, p
       console.warn(`Historial: partida ${partida.id} sin imagen (${error.message})`);
     }
   }
-  await cliente.enviar(canalHistorial, { embeds: [embedPartida(partida)], allowed_mentions: { parse: [] } });
+  await cliente.enviar(canalHistorial, { embeds: [embedPartida(partida), logros.embedDestacadas(partida)].filter(Boolean), allowed_mentions: { parse: [] } });
   return true;
 }
 
@@ -141,22 +143,33 @@ async function publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, 
       }
     });
     const nuevas = agrupar(partidasPorJugador, { ahora, publicadas });
-    let publicadasAhora = 0;
+    const publicadasAhora = [];
     for (const [i, p] of nuevas.entries()) {
       if (i) await pausa(PAUSA_LEETIFY_MS);
       const ok = await publicarPartida({ cliente, pedir, canalHistorial, claveLeetify, partida: p, jugadores, conImagen });
       // Leetify cortó: el resto queda para la próxima vuelta (en orden)
       if (!ok) break;
-      publicadasAhora++;
+      publicadasAhora.push(p);
     }
     if (conImagen) {
       const mejoradas = await mejorarSinImagen({ cliente, pedir, canalHistorial, claveLeetify, jugadores, mensajes, botId });
       if (mejoradas) console.log(`Historial: ${mejoradas} partidas viejas ahora tienen imagen.`);
     }
-    return publicadasAhora;
+    return { publicadas: publicadasAhora, partidasPorJugador };
   } catch (error) {
     console.warn(`Historial: ${error.message}`);
-    return 0;
+    return { publicadas: [], partidasPorJugador: [] };
+  }
+}
+
+// Logros nuevos: se anuncian en #historial (hasta 10 por mensaje)
+async function anunciarLogros({ cliente, canalHistorial, anunciar }) {
+  try {
+    for (let i = 0; i < anunciar.length; i += 10) {
+      await cliente.enviar(canalHistorial, { embeds: anunciar.slice(i, i + 10).map(logros.embedLogro), allowed_mentions: { parse: [] } });
+    }
+  } catch (error) {
+    console.warn(`Logros: ${error.message}`);
   }
 }
 
@@ -315,7 +328,7 @@ async function publicarRanking({ cliente, pedir, canalRanking, canalVincular, pr
 export async function ejecutar({
   cliente, pedir, canalVincular, canalRanking, canalHistorial, canalClips, usuarioTiktok = "brosss.clips", canalBump, rolBump, canalMemes, subreddits = SUBREDDITS, memesCada, memesForzar = false,
   canalStreams, canalRedes, rolStream, kickExtra = "",
-  claveLeetify, historial = null, ahora = Date.now(), conImagen = false,
+  claveLeetify, historial = null, ahora = Date.now(), conImagen = false, registroLogrosPrevio = null,
 }) {
   const registros = registrosDesdeMensajes(await cliente.mensajes(canalVincular));
   const resultados = await enTandas(registros, EN_PARALELO, (r) => evaluar(r, { pedir, claveLeetify }));
@@ -343,9 +356,20 @@ export async function ejecutar({
   );
   await publicarRanking({ cliente, pedir, canalRanking, canalVincular, propio, jugadores, datosSemana, ahora, conImagen });
 
-  const partidas = canalHistorial
+  const historialPartidas = canalHistorial
     ? await publicarPartidas({ cliente, pedir, canalHistorial, claveLeetify, jugadores, botId: yo.id, ahora, conImagen })
-    : 0;
+    : { publicadas: [], partidasPorJugador: [] };
+  const partidas = historialPartidas.publicadas.length;
+
+  // Para /forma: las últimas 10 partidas de cada uno (de las listas que ya se consultaron)
+  for (const { jugador, partidas: lista } of historialPartidas.partidasPorJugador) {
+    if (lista.length) jugador.recientes = recientes(lista, jugador.steamId);
+  }
+
+  // Logros: los de perfil (Premier, partidas...) y los de las partidas recién publicadas
+  const { registro: registroLogros, anunciar } = logros.actualizarLogros(registroLogrosPrevio, jugadores, historialPartidas.publicadas);
+  if (canalHistorial && anunciar.length) await anunciarLogros({ cliente, canalHistorial, anunciar });
+  for (const j of jugadores) j.logros = registroLogros[j.usuarioId] ?? [];
 
   const tiktok = canalClips || canalRedes ? await videosTiktok(usuarioTiktok, pedir) : null;
   const clips = canalClips
@@ -369,6 +393,8 @@ export async function ejecutar({
     // Para /team: las stats de los vinculados (el arranque las guarda)
     jugadores,
     usuariosRegistrados: registros.map((r) => r.usuarioId),
+    registroLogros,
+    logrosAnunciados: anunciar.length,
   };
 }
 
@@ -407,6 +433,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   const pedir = crearPedir();
   const historial = await semana.leer();
+  const registroLogrosPrevio = await logros.leer();
   const resumen = await ejecutar({
     cliente: crearCliente(DISCORD_TOKEN),
     pedir,
@@ -426,10 +453,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     rolStream: ROL_STREAM,
     kickExtra: process.env.KICK_EXTRA ?? "",
     conImagen: true,
+    registroLogrosPrevio,
     claveLeetify: LEETIFY_API_KEY,
     historial,
   });
   const cambio = await semana.guardar(resumen.historial, historial);
+  await logros.guardar(resumen.registroLogros, registroLogrosPrevio);
   // Para el comando /team (Netlify): las stats de cada vinculado
   // Para /smoke: la lista de lineups de csnades, una vez por día
   try {

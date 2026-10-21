@@ -51,7 +51,7 @@ Los viernes a las 12, con los consejos:
 - Podio de 3 en cada uno. Con `ROL_CHAT` y `ROL_VOZ`, las medallas pasan solas al nuevo ganador (el bot necesita **Gestionar roles** y estar más arriba que esos roles).
 - La foto de voz solo se toma si está `CANAL_PREMIOS`. En cron-job.org va una tarea aparte para `voz.yml`, cada 5 minutos.
 
-### 🎯 /team y /formacion
+### 🎯 /team
 `/team jugador1:@... jugador2:@...` (hasta 5) reparte los roles **AWPer, Entry, Support, Lurker e IGL** según las stats de Leetify de cada uno, comparados entre ellos, y elige la combinación que da el mejor equipo en total. Los que no están vinculados se llevan los roles que sobran.
 - **Sin elegir jugadores** usa a los de tu canal de voz (la vuelta de voz guarda cada 5 minutos quién está en cada canal en `datos/voz.json`).
 - El mensaje trae un resumen del equipo (Premier, winrate y aim promedio, química), una tarjeta por jugador con el color de su rol, su encaje en el rol y sus stats, y el plan de compra.
@@ -65,6 +65,14 @@ Configuración (una vez):
 3. Volvé a publicar el sitio (Deploys → Trigger deploy) para que tome la variable.
 4. En el portal de Discord → General Information → **Interactions Endpoint URL**: `https://<tu-sitio>.netlify.app/interacciones` → Save (Discord la prueba en el momento).
 5. **Actions → Comandos → Run workflow**: registra /team y /formacion en el server.
+
+### 📈 /forma y 🎮 /jugamos
+- **`/forma [jugador]`**: las últimas 10 partidas (sin elegir, las tuyas): la racha 🟩🟥, victorias y derrotas, si el rating viene subiendo o bajando, la mejor partida, los mapas y las últimas 5. El bot guarda un resumen de las 10 más recientes de cada uno en `datos/jugadores.json` (campo `recientes`), con las mismas listas que consulta para #historial.
+- **`/jugamos hora [modo]`**: una convocatoria con botones ✅ Me sumo / ❌ No puedo (el que la crea ya queda anotado; tocar de nuevo tu botón te saca). El cupo depende del modo (Premier 5, Wingman 2, Casual 10...). Las listas viven en el mismo mensaje. Cuando se completa, manda un mensaje aparte que notifica a los anotados.
+
+### ⚡ Jugadas destacadas y 🏅 logros (#historial)
+- **Jugadas destacadas:** si en una partida alguien hizo un ACE, un 4K, 30+ kills o ganaron 13-0, va una tarjeta con eso en la misma publicación de la partida.
+- **Logros:** se ganan una sola vez y se anuncian en #historial (primer ACE, 30 kills, barrida 13-0, partidaza de +10, 100/500/1000 partidas, 10K a 30K de Premier, FACEIT 10). Se ven en `/stats`. Se guardan en `datos/logros.json`. La primera vez que el bot ve a alguien, le anota en silencio los que ya tenía.
 
 ### 📊 /stats, ⚔️ /comparar y 💨 /smoke
 Los atiende la misma función de Netlify que /team.
@@ -157,6 +165,9 @@ Antes, `npm install`: la única dependencia es [sharp](https://sharp.pixelplumbi
 | `src/voz.js` | Foto de quién está en voz y minutos de la semana |
 | `src/voz-vuelta.js` | La vuelta de voz de cada 5 minutos |
 | `src/premios.js` | Premios de chat y voz, con sus medallas |
+| `src/forma.js` | /forma y el resumen de las últimas partidas |
+| `src/convocatoria.js` | /jugamos y sus botones |
+| `src/logros.js` | Jugadas destacadas y logros |
 | `src/stats-jugador.js` | /stats y /comparar |
 | `src/lineups.js` | /smoke |
 | `src/csnades.js` | Baja los lineups de csnades una vez por día |

@@ -5,5 +5,7 @@ import { atender } from "../../src/comando-team.js";
 
 export const config = { path: "/interacciones" };
 
-export default (peticion) =>
-  atender(peticion, { clavePublica: process.env.DISCORD_PUBLIC_KEY });
+// context.waitUntil: deja terminar tareas después de responder (el aviso
+// de "equipo completo" de /jugamos)
+export default (peticion, context) =>
+  atender(peticion, { clavePublica: process.env.DISCORD_PUBLIC_KEY, despues: context?.waitUntil?.bind(context) ?? null });

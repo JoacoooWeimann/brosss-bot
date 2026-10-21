@@ -8,6 +8,7 @@
 // =============================================================
 
 import { ROLES, puntajesRelativos, puntajeRol, encaje, barra, colorPremier } from "./formacion.js";
+import { textoLogros } from "./logros.js";
 
 const r = Math.round;
 const miles = (n) => Number(n).toLocaleString("es-AR");
@@ -139,11 +140,13 @@ export function mensajeStats(usuarioId, todos) {
     color: ROLES[roles[0].rol].color,
   };
 
+  const logrosTexto = textoLogros(d.logros);
   const resumen = {
     color: 0x22e36b,
     fields: [
       { name: "💪 Puntos fuertes", value: fuertes.join("\n") || "—", inline: true },
       { name: "📉 Para mejorar", value: debiles.join("\n") || "—", inline: true },
+      ...(logrosTexto ? [{ name: `🏅 Logros (${d.logros.length})`, value: logrosTexto, inline: false }] : []),
     ],
     footer: { text: "Comparado con el resto de los vinculados del server · datos de Leetify" },
   };
