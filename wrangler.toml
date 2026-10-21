@@ -1,0 +1,6 @@
+# Cloudflare Worker de los comandos con / (ver worker/index.js).
+# Lo publica el workflow "Worker" (.github/workflows/worker.yml).
+name = "brosss-bot"
+main = "worker/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true

@@ -112,11 +112,11 @@ const peticion = (obj, { firma, ts = "1700000000" } = {}) => {
   });
 };
 
-test("firma: acepta la de Discord y rechaza cualquier otra", () => {
-  assert.equal(firmaValida("hola", firmar("hola"), "1700000000", clavePublica), true);
-  assert.equal(firmaValida("hola!", firmar("hola"), "1700000000", clavePublica), false);
-  assert.equal(firmaValida("hola", "00", "1700000000", clavePublica), false);
-  assert.equal(firmaValida("hola", firmar("hola"), "1700000000", ""), false);
+test("firma: acepta la de Discord y rechaza cualquier otra", async () => {
+  assert.equal(await firmaValida("hola", firmar("hola"), "1700000000", clavePublica), true);
+  assert.equal(await firmaValida("hola!", firmar("hola"), "1700000000", clavePublica), false);
+  assert.equal(await firmaValida("hola", "00", "1700000000", clavePublica), false);
+  assert.equal(await firmaValida("hola", firmar("hola"), "1700000000", ""), false);
 });
 
 test("función: 401 sin firma válida y responde el PING de Discord", async () => {
@@ -156,7 +156,7 @@ test("usuarios elegidos: sin repetir y con el apodo del server si tiene", () => 
 });
 
 test("la clave se limpia (espacios, comillas) y el GET dice si está cargada", async () => {
-  assert.equal(firmaValida("hola", firmar("hola"), "1700000000", ` "${clavePublica}" \n`), true);
+  assert.equal(await firmaValida("hola", firmar("hola"), "1700000000", ` "${clavePublica}" \n`), true);
   const estado = async (clave) => (await (await atender(new Request("https://x/interacciones"), { clavePublica: clave })).json()).clavePublica;
   assert.equal(await estado(clavePublica), "cargada");
   assert.equal(await estado(""), "falta");

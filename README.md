@@ -57,14 +57,16 @@ Los viernes a las 12, con los consejos:
 - El mensaje trae un resumen del equipo (Premier, winrate y aim promedio, química), una tarjeta por jugador con el color de su rol, su encaje en el rol y sus stats, y el plan de compra.
 - El botón **🔀 Mezclar** cambia el mismo mensaje por la siguiente mejor formación (recorre las 5 mejores).
 
-Un comando con / tiene que responder en menos de 3 segundos, así que no lo atiende este bot (que corre cada tanto) sino una **función de Netlify** (`netlify/functions/interacciones.mjs`). Para que sea rápida, no consulta Leetify: lee `datos/jugadores.json`, que la vuelta de 15 minutos deja con las stats de cada vinculado. **No lo borres ni lo muevas.**
+Un comando con / tiene que responder en menos de 3 segundos, así que no lo atiende este bot (que corre cada tanto) sino un **Cloudflare Worker** (`worker/index.js`; antes era una función de Netlify, que sigue en `netlify/functions/` pero ya no se usa: Netlify cobra créditos por cada deploy y se agotaban). Para que sea rápida, no consulta Leetify: lee `datos/jugadores.json`, que la vuelta de 15 minutos deja con las stats de cada vinculado. **No lo borres ni lo muevas.**
 
 Configuración (una vez):
-1. En Netlify: **Add new site → Import an existing project** → este repo. Netlify lee `netlify.toml`, no hay que tocar nada más.
-2. En el sitio nuevo: **Site configuration → Environment variables** → `DISCORD_PUBLIC_KEY` = la **Public Key** del bot (portal de Discord → General Information). Opcional: `CANAL_VINCULAR`.
-3. Volvé a publicar el sitio (Deploys → Trigger deploy) para que tome la variable.
-4. En el portal de Discord → General Information → **Interactions Endpoint URL**: `https://<tu-sitio>.netlify.app/interacciones` → Save (Discord la prueba en el momento).
-5. **Actions → Comandos → Run workflow**: registra /team y /formacion en el server.
+1. Cuenta gratis en [Cloudflare](https://dash.cloudflare.com). **My Profile → API Tokens → Create Token → plantilla "Edit Cloudflare Workers"** → copiá el token. El **Account ID** está en la página principal de Workers.
+2. En los Secrets de este repo: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` y `DISCORD_PUBLIC_KEY` (la **Public Key** del bot, portal de Discord → General Information).
+3. **Actions → Worker → Run workflow**: publica el Worker. La URL queda en el log (`https://brosss-bot.<tu-subdominio>.workers.dev`). Abierta en el navegador tiene que decir `"clavePublica":"cargada"`.
+4. En el portal de Discord → General Information → **Interactions Endpoint URL**: esa URL → Save (Discord la prueba en el momento).
+5. **Actions → Comandos → Run workflow**: registra los comandos en el server.
+
+Después, el Worker se vuelve a publicar solo cada vez que cambia el código (`src/`, `worker/`).
 
 ### 📈 /forma y 🎮 /jugamos
 - **`/forma [jugador]`**: las últimas 10 partidas (sin elegir, las tuyas): la racha 🟩🟥, victorias y derrotas, si el rating viene subiendo o bajando, la mejor partida, los mapas y las últimas 5. El bot guarda un resumen de las 10 más recientes de cada uno en `datos/jugadores.json` (campo `recientes`), con las mismas listas que consulta para #historial.
@@ -167,12 +169,14 @@ Antes, `npm install`: la única dependencia es [sharp](https://sharp.pixelplumbi
 | `src/premios.js` | Premios de chat y voz, con sus medallas |
 | `src/forma.js` | /forma y el resumen de las últimas partidas |
 | `src/convocatoria.js` | /jugamos y sus botones |
-| `src/logros.js` | Jugadas destacadas y logros |
+| `src/logros-def.js` | Jugadas destacadas y logros (definiciones y mensajes) |
+| `src/logros.js` | Guarda los logros en `datos/logros.json` |
 | `src/stats-jugador.js` | /stats y /comparar |
 | `src/lineups.js` | /smoke |
 | `src/csnades.js` | Baja los lineups de csnades una vez por día |
 | `src/formacion.js` | Reparte los roles de /team según las stats |
-| `src/comando-team.js` | Atiende /team y /formacion (lo usa la función de Netlify) |
+| `worker/index.js` | El Cloudflare Worker que recibe los comandos con / |
+| `src/comando-team.js` | Atiende todos los comandos y botones (lo usa el Worker) |
 | `src/firma.js` | Verifica que el pedido venga de Discord |
 | `src/jugadores-datos.js` | Deja las stats de los vinculados para /team |
 | `src/registrar-comandos.js` | Registra los comandos con / |

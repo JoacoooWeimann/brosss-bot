@@ -76,7 +76,7 @@ export async function atender(peticion, { clavePublica, pedir = fetch, despues =
     return respuesta({ funcion: "ok", clavePublica: largo === 64 ? "cargada" : largo ? `mal cargada (${largo} caracteres, tienen que ser 64)` : "falta" });
   }
   const cuerpo = await peticion.text();
-  const ok = firmaValida(cuerpo, peticion.headers.get("x-signature-ed25519"), peticion.headers.get("x-signature-timestamp"), clavePublica);
+  const ok = await firmaValida(cuerpo, peticion.headers.get("x-signature-ed25519"), peticion.headers.get("x-signature-timestamp"), clavePublica);
   if (!ok) return new Response("firma inválida", { status: 401 });
 
   const interaccion = JSON.parse(cuerpo);

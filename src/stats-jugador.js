@@ -8,7 +8,7 @@
 // =============================================================
 
 import { ROLES, puntajesRelativos, puntajeRol, encaje, barra, colorPremier } from "./formacion.js";
-import { textoLogros } from "./logros.js";
+import { textoLogros } from "./logros-def.js";
 
 const r = Math.round;
 const miles = (n) => Number(n).toLocaleString("es-AR");

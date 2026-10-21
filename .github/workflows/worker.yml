@@ -1,0 +1,39 @@
+# Publica el Cloudflare Worker de los comandos con / cuando cambia su código.
+# Necesita en los Secrets del repo: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+# y DISCORD_PUBLIC_KEY (la Public Key del bot, se la pasa al Worker).
+name: Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "worker/**"
+      - "wrangler.toml"
+      - ".github/workflows/worker.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      HAY_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+    steps:
+      # Sin los datos de Cloudflare cargados, avisa en vez de fallar
+      - if: env.HAY_CLOUDFLARE != 'true'
+        run: echo "Faltan CLOUDFLARE_API_TOKEN y CLOUDFLARE_ACCOUNT_ID en los Secrets del repo. No se publica el Worker."
+      - if: env.HAY_CLOUDFLARE == 'true'
+        uses: actions/checkout@v5
+      - if: env.HAY_CLOUDFLARE == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          secrets: |
+            DISCORD_PUBLIC_KEY
+        env:
+          DISCORD_PUBLIC_KEY: ${{ secrets.DISCORD_PUBLIC_KEY }}
