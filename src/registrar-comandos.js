@@ -1,7 +1,7 @@
 // =============================================================
 //  REGISTRAR LOS COMANDOS CON /
 //  Le dice a Discord qué comandos tiene el bot (/team, /stats,
-//  /comparar, /forma, /jugamos y /smoke). Los que no están en la lista
+//  /comparar, /forma, /tips, /jugamos y /smoke). Los que no están en la lista
 //  se borran del server (así se sacó /formacion).
 //  Se corre una vez a mano (Actions → Comandos → Run workflow), y de
 //  nuevo solo si cambian las opciones. Se registran en el servidor de
@@ -35,6 +35,12 @@ export const COMANDOS = [
     type: 1,
     description: "Las últimas 10 partidas de un jugador: racha, rating y su mejor partida",
     options: [{ type: 6, name: "jugador", description: "De quién (sin elegir, la tuya)", required: false }],
+  },
+  {
+    name: "tips",
+    type: 1,
+    description: "Qué practicar: tus 3 áreas más flojas con consejos, mapa de práctica y videos",
+    options: [{ type: 6, name: "jugador", description: "Para quién (sin elegir, para vos)", required: false }],
   },
   {
     name: "jugamos",

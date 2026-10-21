@@ -14,6 +14,7 @@ import { armarFormacion, mensajeFormacion, jugadoresDelMensaje } from "./formaci
 import { mensajeStats, mensajeComparar } from "./stats-jugador.js";
 import { mensajeLineups } from "./lineups.js";
 import { mensajeForma } from "./forma.js";
+import { mensajeTips } from "./tips.js";
 import { mensajeConvocatoria, leerConvocatoria, alternar, normalizarHora, MODOS } from "./convocatoria.js";
 
 const RAW = "https://raw.githubusercontent.com/JoacoooWeimann/brosss-bot/main/datos";
@@ -165,6 +166,14 @@ export async function atender(peticion, { clavePublica, pedir = fetch, despues =
     const datos = (await leerJson(DATOS_URL, pedir))?.jugadores ?? {};
     if (!datos[id]) return noVinculado(id);
     return respuesta({ type: 4, data: mensajeForma(id, datos[id]) });
+  }
+
+  // /tips [jugador]: qué practicar (sin elegir a nadie, lo tuyo)
+  if (interaccion.type === 2 && nombre === "tips") {
+    const id = opcion("jugador") ?? interaccion.member?.user?.id ?? interaccion.user?.id;
+    const datos = (await leerJson(DATOS_URL, pedir))?.jugadores ?? {};
+    if (!datos[id]) return noVinculado(id);
+    return respuesta({ type: 4, data: mensajeTips(id, datos[id]) });
   }
 
   // /jugamos hora [modo]: convocatoria con botones

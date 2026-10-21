@@ -68,6 +68,9 @@ Configuración (una vez):
 
 Después, el Worker se vuelve a publicar solo cada vez que cambia el código (`src/`, `worker/`).
 
+### 📚 /tips
+**`/tips [jugador]`** (sin elegir, para vos): las 3 áreas más lejos del objetivo, de las 12 de los consejos de los viernes, con cuánto tiene, el objetivo, una barra de qué tan cerca está, el consejo, el mapa de práctica de Workshop y videos. Abajo, lo que ya hace bien. Las áreas y objetivos están en `src/consejos-def.js` (los comparten /tips y los consejos de los viernes).
+
 ### 📈 /forma y 🎮 /jugamos
 - **`/forma [jugador]`**: las últimas 10 partidas (sin elegir, las tuyas): la racha 🟩🟥, victorias y derrotas, si el rating viene subiendo o bajando, la mejor partida, los mapas y las últimas 5. El bot guarda un resumen de las 10 más recientes de cada uno en `datos/jugadores.json` (campo `recientes`), con las mismas listas que consulta para #historial.
 - **`/jugamos hora [modo]`**: una convocatoria con botones ✅ Me sumo / ❌ No puedo (el que la crea ya queda anotado; tocar de nuevo tu botón te saca). El cupo depende del modo (Premier 5, Wingman 2, Casual 10...). Las listas viven en el mismo mensaje. Cuando se completa, manda un mensaje aparte que notifica a los anotados.
@@ -167,6 +170,8 @@ Antes, `npm install`: la única dependencia es [sharp](https://sharp.pixelplumbi
 | `src/voz.js` | Foto de quién está en voz y minutos de la semana |
 | `src/voz-vuelta.js` | La vuelta de voz de cada 5 minutos |
 | `src/premios.js` | Premios de chat y voz, con sus medallas |
+| `src/tips.js` | /tips |
+| `src/consejos-def.js` | Áreas, objetivos y consejos (para /tips y los consejos de los viernes) |
 | `src/forma.js` | /forma y el resumen de las últimas partidas |
 | `src/convocatoria.js` | /jugamos y sus botones |
 | `src/logros-def.js` | Jugadas destacadas y logros (definiciones y mensajes) |

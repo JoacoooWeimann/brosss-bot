@@ -207,6 +207,7 @@ test("función: /forma, /jugamos y sus botones (el aviso de completo va aparte)"
   const pedir = async () => ({ ok: true, json: async () => ({ jugadores: datos }) });
   const llamar = async (obj, extra = {}) => (await (await atender(peticion(obj), { clavePublica, pedir, ...extra })).json());
   assert.equal((await llamar({ type: 2, data: { name: "forma" }, member: { user: { id: "awp" } } })).data.embeds[0].title, "📈 A");
+  assert.equal((await llamar({ type: 2, data: { name: "tips" }, member: { user: { id: "awp" } } })).data.embeds[0].title, "📚 Qué practicar · A");
 
   const conv = await llamar({ type: 2, data: { name: "jugamos", options: [{ name: "hora", value: "22" }, { name: "modo", value: "wingman" }] }, member: { user: { id: "1" } } });
   assert.equal(conv.data.embeds[0].title, "🤝 Wingman a las 22:00");
