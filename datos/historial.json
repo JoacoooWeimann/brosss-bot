@@ -1,6 +1,9 @@
 {
-  "semana": "2026-10-16T15:00:00.000Z",
+  "semana": "2026-10-23T15:00:00.000Z",
   "base": {
+    "76561198856536439": {
+      "premier": null
+    },
     "76561199028481487": {
       "premier": null
     },
@@ -14,20 +17,17 @@
       "premier": null
     },
     "76561199101650425": {
-      "premier": 4678
+      "premier": 4453
     },
     "76561198860991191": {
-      "premier": 16157
+      "premier": 18307
     },
     "76561199100973080": {
-      "premier": 18743
-    },
-    "76561198856536439": {
-      "premier": null
+      "premier": 20326
     }
   },
   "anterior": {
-    "nombre": "Kyo",
-    "subio": 139
+    "nombre": "Joacooo",
+    "subio": 2150
   }
 }
