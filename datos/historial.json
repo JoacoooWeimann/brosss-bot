@@ -1,5 +1,5 @@
 {
-  "semana": "2026-10-23T15:00:00.000Z",
+  "semana": "2026-10-30T15:00:00.000Z",
   "base": {
     "76561198856536439": {
       "premier": null
@@ -17,7 +17,7 @@
       "premier": null
     },
     "76561199101650425": {
-      "premier": 4453
+      "premier": 4346
     },
     "76561198860991191": {
       "premier": 18307
@@ -26,8 +26,5 @@
       "premier": 20326
     }
   },
-  "anterior": {
-    "nombre": "Joacooo",
-    "subio": 2150
-  }
+  "anterior": null
 }
