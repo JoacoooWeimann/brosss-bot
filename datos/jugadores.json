@@ -1043,30 +1043,44 @@
       "nombre": "Valenn",
       "premier": null,
       "winrate": 0.5517,
-      "partidas": 182,
+      "partidas": 183,
       "faceit": null,
       "avatar": "https://cdn.discordapp.com/avatars/826980367092809792/2ccb42214b07887f008230eeee020a0b.png?size=128",
       "steamId": "76561199156665192",
       "areas": {
-        "aim": 57.926,
-        "posicionamiento": 32.2758,
-        "utilidad": 42.4629,
-        "hs": 20.1396,
-        "preaim": 8.7986,
-        "reaccion": 699.3053,
-        "spray": 33.9534,
-        "counterstrafe": 85.7763,
-        "flashes": 0.4538,
-        "flashAmigos": 0.6312,
-        "tradeos": 47.0371,
-        "utilidadSinUsar": 342.5477,
-        "apertura": -0.0449,
-        "clutch": 0.1192,
-        "entradaT": 23.021,
-        "precision": 28.4916,
-        "tradeKills": 39.4641
+        "aim": 57.5345,
+        "posicionamiento": 34.8268,
+        "utilidad": 43.0653,
+        "hs": 20.5717,
+        "preaim": 8.944,
+        "reaccion": 707.4279,
+        "spray": 33.609,
+        "counterstrafe": 85.8893,
+        "flashes": 0.4554,
+        "flashAmigos": 0.5993,
+        "tradeos": 43.7756,
+        "utilidadSinUsar": 347.8173,
+        "apertura": -0.0404,
+        "clutch": 0.1441,
+        "entradaT": 26.5224,
+        "precision": 28.5523,
+        "tradeKills": 40.7825
       },
       "recientes": [
+        {
+          "id": "12980ecf-4c4f-4887-b0b8-ecf73c3303a3",
+          "fin": "2026-11-03T22:10:44.000Z",
+          "mapa": "de_dust2",
+          "modo": "matchmaking_competitive",
+          "ganados": 13,
+          "perdidos": 10,
+          "k": 31,
+          "d": 14,
+          "a": 3,
+          "adr": 136,
+          "hs": 68,
+          "rating": 14.2
+        },
         {
           "id": "f0097f0d-d115-442d-9c71-b96366505b87",
           "fin": "2026-11-03T21:36:08.000Z",
@@ -1192,24 +1206,12 @@
           "adr": 36,
           "hs": 100,
           "rating": -9.1
-        },
-        {
-          "id": "06bee49b-228d-4b8b-87b4-0efbd31174aa",
-          "fin": "2026-10-12T08:53:57.000Z",
-          "mapa": "de_dust2",
-          "modo": "matchmaking",
-          "ganados": 13,
-          "perdidos": 9,
-          "k": 10,
-          "d": 13,
-          "a": 5,
-          "adr": 54,
-          "hs": 20,
-          "rating": -0.7
         }
       ],
       "logros": [
-        "partidas100"
+        "kills30",
+        "partidas100",
+        "partidaza"
       ]
     },
     "974897829241847868": {
