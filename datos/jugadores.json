@@ -1068,6 +1068,20 @@
       },
       "recientes": [
         {
+          "id": "3dbe8223-22e1-4d90-8b12-cb33b1289d63",
+          "fin": "2026-11-08T05:38:35.000Z",
+          "mapa": "de_mirage",
+          "modo": "matchmaking_competitive",
+          "ganados": 8,
+          "perdidos": 13,
+          "k": 16,
+          "d": 16,
+          "a": 4,
+          "adr": 81,
+          "hs": 50,
+          "rating": -4.7
+        },
+        {
           "id": "dbad3d6c-5b52-4735-bec1-2a33345dab13",
           "fin": "2026-11-08T05:09:04.000Z",
           "mapa": "de_dust2",
@@ -1192,20 +1206,6 @@
           "adr": 66,
           "hs": 57,
           "rating": 2
-        },
-        {
-          "id": "bc21c433-7640-4894-9f39-5ded513e28f4",
-          "fin": "2026-10-14T04:58:16.000Z",
-          "mapa": "de_mirage",
-          "modo": "matchmaking",
-          "ganados": 13,
-          "perdidos": 3,
-          "k": 12,
-          "d": 5,
-          "a": 2,
-          "adr": 86,
-          "hs": 67,
-          "rating": 6.8
         }
       ],
       "logros": [
