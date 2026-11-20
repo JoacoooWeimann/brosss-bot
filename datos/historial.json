@@ -1,5 +1,5 @@
 {
-  "semana": "2026-11-13T15:00:00.000Z",
+  "semana": "2026-11-20T15:00:00.000Z",
   "base": {
     "76561198856536439": {
       "premier": null
@@ -26,8 +26,5 @@
       "premier": 21053
     }
   },
-  "anterior": {
-    "nombre": "Kyo",
-    "subio": 727
-  }
+  "anterior": null
 }
