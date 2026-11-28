@@ -176,31 +176,45 @@
     "472159348022575114": {
       "nombre": "iBranDou",
       "premier": null,
-      "winrate": 0.5667,
-      "partidas": 581,
+      "winrate": 0.6,
+      "partidas": 582,
       "faceit": 7,
       "avatar": "https://cdn.discordapp.com/avatars/472159348022575114/eede482e2b497f8fc243edcd0fb82272.png?size=128",
       "steamId": "76561198856536439",
       "areas": {
-        "aim": 81.8589,
-        "posicionamiento": 52.7903,
-        "utilidad": 55.2706,
-        "hs": 18.0927,
-        "preaim": 8.1457,
-        "reaccion": 513.961,
-        "spray": 38.9449,
-        "counterstrafe": 79.923,
-        "flashes": 0.5144,
-        "flashAmigos": 0.3138,
-        "tradeos": 51.0498,
-        "utilidadSinUsar": 456.8101,
-        "apertura": -0.0265,
-        "clutch": 0.0978,
-        "entradaT": 36.1201,
-        "precision": 35.3746,
-        "tradeKills": 40.9564
+        "aim": 82.8944,
+        "posicionamiento": 55.9618,
+        "utilidad": 55.2531,
+        "hs": 18.5831,
+        "preaim": 8.1011,
+        "reaccion": 512.7984,
+        "spray": 39.1725,
+        "counterstrafe": 80.0624,
+        "flashes": 0.5153,
+        "flashAmigos": 0.3298,
+        "tradeos": 53.1165,
+        "utilidadSinUsar": 466.8472,
+        "apertura": -0.0235,
+        "clutch": 0.1262,
+        "entradaT": 37.8049,
+        "precision": 35.7924,
+        "tradeKills": 41.0772
       },
       "recientes": [
+        {
+          "id": "ed2b0c5f-fab0-44b9-820f-71f65ebf5713",
+          "fin": "2026-11-28T00:44:09.000Z",
+          "mapa": "de_mirage",
+          "modo": "matchmaking_competitive",
+          "ganados": 13,
+          "perdidos": 8,
+          "k": 33,
+          "d": 12,
+          "a": 5,
+          "adr": 145,
+          "hs": 58,
+          "rating": 18.2
+        },
         {
           "id": "e4f311f9-f58f-4cd0-a2c0-272aa13426f8",
           "fin": "2026-11-25T01:59:31.000Z",
@@ -326,25 +340,13 @@
           "adr": 73,
           "hs": 43,
           "rating": 1
-        },
-        {
-          "id": "b960a399-a53d-4030-91b9-b00fd151dc47",
-          "fin": "2026-10-26T05:45:01.000Z",
-          "mapa": "de_dust2",
-          "modo": "faceit",
-          "ganados": 13,
-          "perdidos": 7,
-          "k": 24,
-          "d": 10,
-          "a": 6,
-          "adr": 110,
-          "hs": 21,
-          "rating": 9.6
         }
       ],
       "logros": [
+        "kills30",
         "partidas100",
-        "partidas500"
+        "partidas500",
+        "partidaza"
       ]
     },
     "492855542981591052": {
